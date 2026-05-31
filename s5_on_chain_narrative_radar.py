@@ -53,8 +53,12 @@ def load_env():
     return env
 
 ENV = load_env()
-TG_TOKEN = ENV.get('TELEGRAM_BOT_TOKEN', '')
-TG_CHAT_ID = int(os.environ.get('TG_CHAT_ID', '0'))
+TG_TOKEN = ENV.get('TELEGRAM_BOT_TOKEN', '') or os.environ.get('TELEGRAM_BOT_TOKEN', '')
+_chat_raw = os.environ.get('TG_CHAT_ID') or ENV.get('TG_CHAT_ID') or '0'
+try:
+    TG_CHAT_ID = int(_chat_raw)
+except (TypeError, ValueError):
+    TG_CHAT_ID = _chat_raw  # 支持 @channel 形式
 
 GMGN_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
@@ -214,7 +218,7 @@ def load_flap_seen():
         try:
             with open(FLAP_SEEN_FILE) as f:
                 return json.load(f)
-        except:
+        except Exception:
             pass
     return {}
 
@@ -257,6 +261,7 @@ def tg_send(text, parse_mode='Markdown'):
 # ============================================================
 def init_db():
     """初始化SQLite叙事历史库"""
+    os.makedirs(DATA_DIR, exist_ok=True)
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
     
@@ -514,7 +519,7 @@ def check_token_safety(chain, address):
                     'score': score, 'mint': mint is not None,
                     'freeze': freeze is not None
                 }
-        except:
+        except Exception:
             pass
     else:
         chain_map = {'ethereum': '1', 'eth': '1', 'bsc': '56', 'base': '8453'}
@@ -534,7 +539,7 @@ def check_token_safety(chain, address):
                         'honeypot': honeypot, 'mintable': mintable,
                         'sell_tax': sell_tax, 'buy_tax': buy_tax
                     }
-        except:
+        except Exception:
             pass
     return {'safe': False, 'reason': '无法检查'}  # 无法检查时不推，宁可错过不踩坑
 
@@ -546,8 +551,9 @@ def gmgn_get(url):
         resp = requests.get(url, headers=GMGN_HEADERS, timeout=15)
         if resp.status_code == 200:
             return resp.json().get('data', {})
-    except:
-        pass
+        log(f"[GMGN] HTTP {resp.status_code} (疑似被 Cloudflare 拦截，数据源不可用) — {url.split('/rank/')[-1][:40]}")
+    except Exception as e:
+        log(f"[GMGN] 请求异常: {e}")
     return {}
 
 def fetch_token_description(chain, address):
@@ -570,7 +576,7 @@ def fetch_token_description(chain, address):
                     'telegram': telegram,
                     'website': website,
                 }
-        except:
+        except Exception:
             pass
     
     # 所有链：DEXScreener info字段（网站+社交链接）
@@ -603,7 +609,7 @@ def fetch_token_description(chain, address):
                         'telegram': telegram,
                         'website': website,
                     }
-    except:
+    except Exception:
         pass
     
     return {'description': desc, 'twitter': '', 'telegram': '', 'website': ''}
@@ -1185,7 +1191,7 @@ def scan_narratives():
     flap_tokens = []
     try:
         flap_tokens = fetch_flap_tokens()
-    except:
+    except Exception:
         pass
     all_momentum_tokens = tokens + flap_tokens
     momentum_alerts = track_momentum(all_momentum_tokens)

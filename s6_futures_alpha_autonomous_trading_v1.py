@@ -25,6 +25,30 @@ LEVERAGE = 3                 # 杠杆
 COOLDOWN_HOURS = 4           # 同一币种冷却时间
 MIN_VOLUME_M = 10            # 最小24h成交额(百万U)
 
+# === 通用工具 ===
+def _atomic_write(path, text):
+    """原子写入，避免进程中断损坏账本/状态文件"""
+    tmp = f"{path}.tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        f.write(text)
+    os.replace(tmp, path)
+
+def _get_json(url, params=None, timeout=10, retries=3):
+    """带退避重试的 GET JSON；429/超时/异常重试，全部失败返回 None"""
+    for i in range(retries):
+        try:
+            r = requests.get(url, params=params, timeout=timeout)
+            if r.status_code == 429:
+                time.sleep(2 * (i + 1))
+                continue
+            r.raise_for_status()
+            return r.json()
+        except Exception:
+            if i < retries - 1:
+                time.sleep(1)
+    return None
+
+
 # === TG推送 ===
 def load_tg_config():
     """Load TG config from environment variables or .env file"""
@@ -64,7 +88,7 @@ def send_tg(text):
             "text": text,
             "parse_mode": "Markdown"
         }, timeout=10)
-    except:
+    except Exception:
         pass
 
 
@@ -76,8 +100,7 @@ def load_trades():
     return {"initial_balance": INITIAL_BALANCE, "trades": []}
 
 def save_trades(data):
-    with open(DATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    _atomic_write(DATA_FILE, json.dumps(data, ensure_ascii=False, indent=2))
 
 def load_state():
     if os.path.exists(SCANNER_STATE):
@@ -86,8 +109,7 @@ def load_state():
     return {"last_opens": {}, "signals_seen": {}}
 
 def save_state(state):
-    with open(SCANNER_STATE, "w") as f:
-        json.dump(state, f, ensure_ascii=False, indent=2)
+    _atomic_write(SCANNER_STATE, json.dumps(state, ensure_ascii=False, indent=2))
 
 def get_balance(data):
     balance = data.get("initial_balance", INITIAL_BALANCE)
@@ -115,16 +137,12 @@ def log(msg):
 
 # === 币安API ===
 def get_all_tickers():
-    url = "https://fapi.binance.com/fapi/v1/ticker/24hr"
-    resp = requests.get(url, timeout=10)
-    return resp.json()
+    return _get_json("https://fapi.binance.com/fapi/v1/ticker/24hr")
 
 def get_funding_rates():
     """获取所有币种最新费率"""
-    url = "https://fapi.binance.com/fapi/v1/premiumIndex"
-    resp = requests.get(url, timeout=10)
-    return {item['symbol']: float(item['lastFundingRate']) * 100 
-            for item in resp.json()}
+    arr = _get_json("https://fapi.binance.com/fapi/v1/premiumIndex")
+    return {item['symbol']: float(item['lastFundingRate']) * 100 for item in arr} if arr else {}
 
 def get_funding_history(symbol, limit=8):
     url = f"https://fapi.binance.com/fapi/v1/fundingRate?symbol={symbol}&limit={limit}"
@@ -172,7 +190,7 @@ def detect_extreme_negative_funding(symbol, funding_rate, funding_rates_map):
             "sl_pct": 0.08,   # 止损8%
             "tp_pct": 0.12,   # 止盈12%
         }
-    except:
+    except Exception:
         return None
 
 
@@ -201,14 +219,14 @@ def detect_extreme_positive_funding(symbol, funding_rate, funding_rates_map):
             "sl_pct": 0.10,
             "tp_pct": 0.15,
         }
-    except:
+    except Exception:
         return None
 
 
 def detect_crash_bounce(ticker):
     """
     策略3: 暴跌后反弹(超跌反弹)
-    条件: 24h跌>25% 但最近4h企稳/反弹
+    条件: 24h跌>25% 但最近1h K线企稳/反弹
     """
     change_pct = float(ticker['priceChangePercent'])
     if change_pct >= -25:
@@ -229,7 +247,7 @@ def detect_crash_bounce(ticker):
                 "sl_pct": 0.10,
                 "tp_pct": 0.15,
             }
-    except:
+    except Exception:
         pass
     return None
 
@@ -267,7 +285,7 @@ def detect_pump_short(ticker):
             "sl_pct": 0.15,   # 暴涨币波动大，止损宽一些
             "tp_pct": 0.20,
         }
-    except:
+    except Exception:
         pass
     return None
 
@@ -286,6 +304,7 @@ def check_environment(symbol, signal):
         "verdict": ""
     }
     score = 0  # 综合得分，>=3才开仓
+    ticker = None  # 供 OI/量能两段共用，避免前段失败时未定义
     
     try:
         # 1. BTC环境 — 做多需要BTC不在暴跌，做空需要BTC不在暴涨
@@ -334,7 +353,7 @@ def check_environment(symbol, signal):
                     analysis["sentiment"] = f"FGI={fng_val}极度恐惧 做空风险 -1"
                 else:
                     analysis["sentiment"] = f"FGI={fng_val}中性 0"
-        except:
+        except Exception:
             analysis["sentiment"] = "FGI获取失败 0"
         
         # 3. OI变化 — 看该币OI是否支持方向
@@ -349,13 +368,15 @@ def check_environment(symbol, signal):
                 analysis["oi_check"] = f"OI={oi_usd/1e6:.1f}M 有关注度 +1"
             else:
                 analysis["oi_check"] = f"OI={oi_usd/1e6:.1f}M 关注度低 0"
-        except:
+        except Exception:
             analysis["oi_check"] = "OI获取失败 0"
         
         # 4. 成交量 — 量能是否活跃
         try:
-            vol = float(ticker.get('quoteVolume', 0))
-            if vol > 50_000_000:
+            vol = float(ticker['quoteVolume']) if ticker else 0
+            if not ticker:
+                analysis["volume_check"] = "量能获取失败 0"
+            elif vol > 50_000_000:
                 score += 1
                 analysis["volume_check"] = f"24h量={vol/1e6:.0f}M 活跃 +1"
             elif vol > 20_000_000:
@@ -363,7 +384,7 @@ def check_environment(symbol, signal):
             else:
                 score -= 1
                 analysis["volume_check"] = f"24h量={vol/1e6:.0f}M 冷清 -1"
-        except:
+        except Exception:
             analysis["volume_check"] = "量能获取失败 0"
         
         # 5. 信号本身的强度加分
@@ -528,25 +549,80 @@ def swap_weakest(data, state, open_positions, new_signal, tickers):
     execute_open(data, state, new_signal["symbol"], new_signal["price"], new_signal)
 
 
+# === 持仓结算(止盈/止损) ===
+def settle_positions(data, tickers):
+    """遍历持仓，现价触及止损/止盈则按触发价平仓结算。返回平掉的笔数。
+    注：用每分钟现价判定(1分钟粒度)，可能漏掉分钟内瞬时插针，模拟盘可接受。"""
+    price_map = {t['symbol']: float(t['lastPrice']) for t in tickers}
+    closed = 0
+    for t in data["trades"]:
+        if t["status"] != "open":
+            continue
+        price = price_map.get(t["symbol"])
+        if price is None:
+            continue
+        reason = None
+        if t["direction"] == "long":
+            if price <= t["stop_loss"]:
+                reason = "stop_loss"
+            elif price >= t["take_profit"]:
+                reason = "take_profit"
+        else:
+            if price >= t["stop_loss"]:
+                reason = "stop_loss"
+            elif price <= t["take_profit"]:
+                reason = "take_profit"
+        if not reason:
+            continue
+        # 以触发的 SL/TP 价结算(贴近实际成交)
+        exit_price = t["stop_loss"] if reason == "stop_loss" else t["take_profit"]
+        if t["direction"] == "long":
+            pnl_pct = (exit_price - t["entry_price"]) / t["entry_price"] * 100 * t["leverage"]
+        else:
+            pnl_pct = (t["entry_price"] - exit_price) / t["entry_price"] * 100 * t["leverage"]
+        pos_usd = t.get("position_usd", 0) or 0
+        t["exit_price"] = exit_price
+        t["exit_time"] = now_str()
+        t["exit_reason"] = reason
+        t["pnl_pct"] = round(pnl_pct, 2)
+        t["pnl_usd"] = round(pnl_pct / 100 * pos_usd, 4)
+        t["status"] = "closed"
+        closed += 1
+        direction_cn = "多" if t["direction"] == "long" else "空"
+        tag = "✅止盈" if reason == "take_profit" else "🛑止损"
+        msg = f"""```
+[{tag}] #{t['id']} {t['symbol']} {direction_cn}
+入场: {t['entry_price']}  出场: {exit_price}
+盈亏: {pnl_pct:+.2f}% ({t['pnl_usd']:+.2f}U)
+```"""
+        log(f"平仓 #{t['id']} {t['symbol']} {reason} {t['pnl_usd']:+.2f}U")
+        send_tg(msg)
+    if closed:
+        save_trades(data)
+    return closed
+
+
 # === 主扫描逻辑 ===
 def scan():
     data = load_trades()
     state = load_state()
     now = datetime.now(TZ_UTC8)
-    
-    # 检查持仓数
+
+    # 获取市场数据(先拉，结算与开仓都要用)
+    tickers = get_all_tickers()
+    funding_rates = get_funding_rates()
+    if not tickers:
+        log("行情拉取失败, 跳过本轮")
+        return
+
+    # 先结算已有持仓的止盈/止损(每轮必做，平仓后可能腾出仓位)
+    settle_positions(data, tickers)
+
+    # 结算后再统计持仓
     open_positions = [t for t in data["trades"] if t["status"] == "open"]
     open_symbols = set(t["symbol"] for t in open_positions)
-    
+
     if len(open_positions) >= MAX_OPEN_POSITIONS:
-        return
-    
-    # 获取市场数据
-    try:
-        tickers = get_all_tickers()
-        funding_rates = get_funding_rates()
-    except Exception as e:
-        log(f"API错误: {e}")
         return
     
     # 过滤USDT合约 + 最小成交量
@@ -574,7 +650,7 @@ def scan():
                     last_dt = last_dt.replace(tzinfo=TZ_UTC8)
                 if (now - last_dt).total_seconds() < COOLDOWN_HOURS * 3600:
                     continue
-            except:
+            except Exception:
                 pass
         
         fr = funding_rates.get(symbol, 0)
@@ -593,7 +669,7 @@ def scan():
                     signal["price"] = float(ticker['lastPrice'])
                     signal["volume_m"] = float(ticker['quoteVolume']) / 1e6
                     signals.append(signal)
-            except:
+            except Exception:
                 continue
     
     if not signals:

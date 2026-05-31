@@ -11,6 +11,8 @@ oi_funding_alerts.json
 heat_history.json
 narrative_seen.json
 flap_seen.json
+trades.json
+scanner_state.json
 
 # python
 __pycache__/

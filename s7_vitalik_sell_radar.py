@@ -12,6 +12,8 @@ Architecture:
 5. Auto-reconnect + multi-RPC failover
 """
 
+from __future__ import annotations
+
 import asyncio
 import json
 import logging
@@ -98,7 +100,10 @@ KNOWN_CEX = {
 }
 
 # Minimum notification amount (USD), 0 = notify all
-MIN_NOTIFY_USD = int(os.environ.get("MIN_NOTIFY_USD", "0"))
+try:
+    MIN_NOTIFY_USD = int(os.environ.get("MIN_NOTIFY_USD", "0"))
+except (TypeError, ValueError):
+    MIN_NOTIFY_USD = 0
 
 # Reconnect settings
 RECONNECT_DELAY = 5
@@ -147,7 +152,7 @@ def decode_transfer_value(data_hex: str, decimals: int) -> float:
     try:
         raw = int(data_hex, 16)
         return raw / (10 ** decimals)
-    except:
+    except Exception:
         return 0.0
 
 
@@ -218,7 +223,7 @@ async def get_token_info(token_addr: str) -> dict:
                 info["symbol"] = bytes.fromhex(symbol_hex).decode("utf-8", errors="replace").strip('\x00')
             elif len(hex_str) == 64:
                 info["symbol"] = bytes.fromhex(hex_str).decode("utf-8", errors="replace").strip('\x00')
-        except:
+        except Exception:
             pass
 
     # decimals()
@@ -228,7 +233,7 @@ async def get_token_info(token_addr: str) -> dict:
     if result and len(result) > 2:
         try:
             info["decimals"] = int(result, 16)
-        except:
+        except Exception:
             pass
 
     # name()
@@ -245,7 +250,7 @@ async def get_token_info(token_addr: str) -> dict:
                 info["name"] = bytes.fromhex(name_hex).decode("utf-8", errors="replace").strip('\x00')
             elif len(hex_str) == 64:
                 info["name"] = bytes.fromhex(hex_str).decode("utf-8", errors="replace").strip('\x00')
-        except:
+        except Exception:
             pass
 
     token_cache[addr_lower] = info
@@ -260,20 +265,6 @@ async def check_if_pool(addr: str) -> bool:
     if result and len(result) == 66:  # 0x + 64 hex chars
         return True
     return False
-
-
-async def get_eth_price() -> float:
-    """Get ETH price from CoinGecko"""
-    session = await get_http_session()
-    try:
-        async with session.get(
-            "https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",
-            timeout=aiohttp.ClientTimeout(total=5),
-        ) as resp:
-            data = await resp.json()
-            return data.get("ethereum", {}).get("usd", 0)
-    except:
-        return 2300  # fallback
 
 
 async def get_token_price_usd(token_addr: str) -> float | None:
@@ -291,7 +282,7 @@ async def get_token_price_usd(token_addr: str) -> float | None:
                 pairs.sort(key=lambda p: float(p.get("liquidity", {}).get("usd", 0) or 0), reverse=True)
                 price = float(pairs[0].get("priceUsd", 0) or 0)
                 return price if price > 0 else None
-    except:
+    except Exception:
         pass
     return None
 

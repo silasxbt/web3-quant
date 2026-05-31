@@ -8,7 +8,7 @@
 2. 马斯克/川普相关 — 重点ETH+SOL，BSC也推
 3. 币安/CZ相关 — 只推BSC
 
-数据源：GMGN新币 + DEXScreener搜索
+数据源：DexScreener boosts/profiles 发现 + 批量行情（GMGN 被 Cloudflare 拦截已弃用）
 叙事历史：SQLite去重
 """
 
@@ -60,11 +60,8 @@ try:
 except (TypeError, ValueError):
     TG_CHAT_ID = _chat_raw  # 支持 @channel 形式
 
-GMGN_HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-    'Accept': 'application/json',
-    'Referer': 'https://gmgn.ai/',
-}
+# DexScreener 链名映射 (chainId -> 内部链代码)
+DS_CHAIN_MAP = {'ethereum': 'eth', 'bsc': 'bsc', 'base': 'base', 'solana': 'sol'}
 
 # ============================================================
 # 马斯克/川普关键词库（大小写不敏感）
@@ -544,17 +541,17 @@ def check_token_safety(chain, address):
     return {'safe': False, 'reason': '无法检查'}  # 无法检查时不推，宁可错过不踩坑
 
 # ============================================================
-# GMGN数据获取
+# DexScreener 数据获取 (替代被 Cloudflare 拦截的 GMGN)
 # ============================================================
-def gmgn_get(url):
+def _ds_get(url):
     try:
-        resp = requests.get(url, headers=GMGN_HEADERS, timeout=15)
-        if resp.status_code == 200:
-            return resp.json().get('data', {})
-        log(f"[GMGN] HTTP {resp.status_code} (疑似被 Cloudflare 拦截，数据源不可用) — {url.split('/rank/')[-1][:40]}")
+        r = requests.get(url, timeout=12)
+        if r.status_code == 200:
+            return r.json()
+        log(f"[DexScreener] HTTP {r.status_code} — {url[:60]}")
     except Exception as e:
-        log(f"[GMGN] 请求异常: {e}")
-    return {}
+        log(f"[DexScreener] 请求异常: {e}")
+    return None
 
 def fetch_token_description(chain, address):
     """获取代币描述/故事 — 叙事雷达核心信息"""
@@ -615,146 +612,76 @@ def fetch_token_description(chain, address):
     return {'description': desc, 'twitter': '', 'telegram': '', 'website': ''}
 
 def fetch_new_tokens():
-    """从GMGN获取各链新币 + 多维度覆盖"""
+    """从 DexScreener 发现活跃/新币(boosts+profiles)，批量取行情。替代被 Cloudflare 封的 GMGN。"""
+    # 1. 发现候选地址 (boosts 最新/热门 + profiles 新建档)
+    cand = {}  # address -> chain_code
+    for feed in (
+        "https://api.dexscreener.com/token-boosts/latest/v1",
+        "https://api.dexscreener.com/token-boosts/top/v1",
+        "https://api.dexscreener.com/token-profiles/latest/v1",
+    ):
+        items = _ds_get(feed)
+        if not isinstance(items, list):
+            continue
+        for it in items:
+            ch = DS_CHAIN_MAP.get(it.get('chainId'))
+            a = it.get('tokenAddress')
+            if ch and a and a not in cand:
+                cand[a] = ch
+        time.sleep(0.3)
+
+    # 2. 批量取行情 (每批30个地址)
     all_tokens = []
-    seen_addrs = set()
-    
-    for chain in ['eth', 'bsc', 'base']:
-        # 多维度拉数据，避免漏掉
-        urls = [
-            # 按创建时间 — 最新的币
-            f'https://gmgn.ai/defi/quotation/v1/rank/{chain}/swaps/1h?orderby=open_timestamp&direction=desc&limit=100',
-            # 按交易量 — 最活跃的币
-            f'https://gmgn.ai/defi/quotation/v1/rank/{chain}/swaps/1h?orderby=swaps&direction=desc&limit=50',
-        ]
-        
-        for url in urls:
-            data = gmgn_get(url)
-            tokens = data.get('rank', [])
-            
-            for t in tokens:
-                addr = t.get('address', '')
-                if not addr or addr in seen_addrs:
-                    continue
-                
-                mc = t.get('market_cap', 0) or t.get('fdv', 0) or 0
-                liq = t.get('liquidity', 0) or 0
-                
-                # 基本过滤：太小的不看
-                if mc < 1000 or liq < 500 or mc > 10000000:
-                    continue
-                
-                age_ts = t.get('open_timestamp', 0)
-                age_h = (time.time() - age_ts) / 3600 if age_ts > 0 else 999
-                
-                # 不限年龄 — 动量追踪核心逻辑：涨就推，不管新旧
-                
-                seen_addrs.add(addr)
-                all_tokens.append({
-                    'address': addr,
-                    'chain': chain,
-                    'name': t.get('name', '?'),
-                    'symbol': t.get('symbol', '?'),
-                    'mc': mc,
-                    'liq': liq,
-                    'volume': t.get('volume', 0) or 0,
-                    'holders': t.get('holder_count', 0) or 0,
-                    'sm': t.get('smart_degen_count', 0) or 0,
-                    'chg_1h': t.get('price_change_percent1h', 0) or 0,
-                    'chg_24h': t.get('price_change_percent', 0) or 0,
-                    'age_h': age_h,
-                    'price': t.get('price', 0),
-                    'buys_1h': t.get('buys', 0) or 0,
-                    'sells_1h': t.get('sells', 0) or 0,
-                })
-            
-            time.sleep(0.3)
-    
+    seen = set()
+    addrs = list(cand.keys())
+    for i in range(0, len(addrs), 30):
+        data = _ds_get("https://api.dexscreener.com/latest/dex/tokens/" + ",".join(addrs[i:i + 30]))
+        pairs = (data or {}).get('pairs') or []
+        # 同一代币可能多个交易对，取流动性最高的
+        best = {}
+        for p in pairs:
+            base = (p.get('baseToken') or {}).get('address')
+            if not base:
+                continue
+            liq = float((p.get('liquidity') or {}).get('usd') or 0)
+            if base not in best or liq > best[base]['_liq']:
+                p['_liq'] = liq
+                best[base] = p
+        for base, p in best.items():
+            if base in seen:
+                continue
+            seen.add(base)
+            ch = DS_CHAIN_MAP.get(p.get('chainId'))
+            if not ch:
+                continue
+            mc = float(p.get('marketCap') or p.get('fdv') or 0)
+            liq = p['_liq']
+            if mc < 1000 or liq < 500 or mc > 10_000_000:
+                continue
+            bt = p.get('baseToken') or {}
+            tx1 = (p.get('txns') or {}).get('h1') or {}
+            created = p.get('pairCreatedAt') or 0
+            age_h = (time.time() - created / 1000) / 3600 if created else 999
+            all_tokens.append({
+                'address': base, 'chain': ch,
+                'name': bt.get('name', '?'), 'symbol': bt.get('symbol', '?'),
+                'mc': mc, 'liq': liq,
+                'volume': float((p.get('volume') or {}).get('h24') or 0),
+                'holders': 0, 'sm': 0,
+                'chg_1h': float((p.get('priceChange') or {}).get('h1') or 0),
+                'chg_24h': float((p.get('priceChange') or {}).get('h24') or 0),
+                'age_h': age_h,
+                'price': float(p.get('priceUsd') or 0),
+                'buys_1h': int(tx1.get('buys') or 0),
+                'sells_1h': int(tx1.get('sells') or 0),
+            })
+        time.sleep(0.3)
+
     return all_tokens
 
 def fetch_flap_tokens():
-    """
-    FLAP平台扫描 — BSC社区驱动型发射台
-    找形态：跌下来但有底部支撑（有庄在低位推）
-    特征：24h跌了，但1h企稳/反弹，买入>卖出，holders在涨
-    """
-    data = gmgn_get(
-        'https://gmgn.ai/defi/quotation/v1/rank/bsc/swaps/24h?launchpad=flap&orderby=volume&direction=desc&limit=30'
-    )
-    tokens = data.get('rank', [])
-    
-    candidates = []
-    for t in tokens:
-        addr = t.get('address', '')
-        if not addr:
-            continue
-        
-        mc = t.get('market_cap', 0) or 0
-        liq = t.get('liquidity', 0) or 0
-        vol = t.get('volume', 0) or 0
-        holders = t.get('holder_count', 0) or 0
-        buys = t.get('buys', 0) or 0
-        sells = t.get('sells', 0) or 0
-        chg_1h = t.get('price_change_percent1h', 0) or 0
-        chg_24h = t.get('price_change_percent', 0) or 0
-        age_ts = t.get('open_timestamp', 0)
-        age_h = (time.time() - age_ts) / 3600 if age_ts > 0 else 0
-        
-        # 基本门槛
-        if mc < 1000 or liq < 500:
-            continue
-        if holders < 5:
-            continue
-        
-        # 底部支撑形态判断：
-        # 条件1: 24h跌了（或者涨幅有限），说明不是刚拉的
-        # 条件2: 1h跌幅小于24h跌幅，说明在企稳
-        # 条件3: 买入 > 卖出，有人在接
-        buy_ratio = buys / max(sells, 1)
-        
-        is_support = False
-        reason = ''
-        
-        # 形态A: 24h跌了，1h在企稳/反弹
-        if chg_24h < -10 and chg_1h > chg_24h * 0.3:
-            is_support = True
-            reason = f'24h跌{chg_24h:.0f}%但1h企稳{chg_1h:+.0f}%'
-        
-        # 形态B: 24h微跌或横盘，1h微涨，买卖比健康
-        if -10 <= chg_24h <= 30 and chg_1h > -5 and buy_ratio > 1.1:
-            is_support = True
-            reason = f'底部横盘 买卖比{buy_ratio:.2f}'
-        
-        # 形态C: 大跌后强反弹
-        if chg_24h < -30 and chg_1h > 10:
-            is_support = True
-            reason = f'大跌{chg_24h:.0f}%后反弹{chg_1h:+.0f}%'
-        
-        if is_support and buy_ratio >= 1.0:
-            candidates.append({
-                'address': addr,
-                'chain': 'bsc',
-                'name': t.get('name', '?'),
-                'symbol': t.get('symbol', '?'),
-                'mc': mc,
-                'liq': liq,
-                'volume': vol,
-                'holders': holders,
-                'sm': 0,
-                'chg_1h': chg_1h,
-                'chg_24h': chg_24h,
-                'age_h': age_h,
-                'price': t.get('price', 0),
-                'buys': buys,
-                'sells': sells,
-                'buy_ratio': buy_ratio,
-                'support_reason': reason,
-                'launchpad': 'flap',
-            })
-    
-    # 按市值排序
-    candidates.sort(key=lambda x: x['mc'], reverse=True)
-    return candidates
+    """FLAP(BSC launchpad)形态原依赖 GMGN 的 launchpad 过滤；DexScreener 无对应数据，暂停用返回空。"""
+    return []
 
 def format_flap_alert(token, desc_info=None):
     """FLAP低吸信号推送"""

@@ -19,7 +19,6 @@ import time
 import requests
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
-from square_heat import get_square_heat
 
 # === 加载 .env ===
 env_file = Path(__file__).parent / ".env.oi"
@@ -60,9 +59,28 @@ def api_get(endpoint, params=None):
                 time.sleep(2)
             else:
                 return None
-        except:
+        except Exception:
             time.sleep(1)
     return None
+
+
+def _atomic_write(path, text):
+    """原子写入，避免进程中断损坏状态文件"""
+    tmp = f"{path}.tmp"
+    Path(tmp).write_text(text)
+    os.replace(tmp, path)
+
+
+def get_square_heat():
+    """
+    币安广场热搜榜 (返回 [{"coin": 符号, "rapidRiser": bool}, ...]，按热度降序)。
+
+    说明: 币安未公开"广场热搜列表"端点(已实测 /pgc 各 hot-tag 路径均 404；
+    仅 queryByHashtag 单标签查询可用)。此处作为优雅降级桩返回空列表 ——
+    s3 会自动只用 CoinGecko 热搜 + 成交量放量两源驱动，不影响运行。
+    若后续拿到有效的广场热搜端点，只需在此实现并返回上述结构即可。
+    """
+    return []
 
 
 def format_usd(v):
@@ -304,7 +322,7 @@ def main():
     if HEAT_HISTORY_FILE.exists():
         try:
             heat_history = json.loads(HEAT_HISTORY_FILE.read_text())
-        except:
+        except Exception:
             pass
 
     now_ts = datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d %H:%M")
@@ -326,7 +344,7 @@ def main():
                     if v.get("first_seen", "9999") >= cutoff}
 
     # 保存历史
-    HEAT_HISTORY_FILE.write_text(json.dumps(heat_history, indent=2, ensure_ascii=False))
+    _atomic_write(HEAT_HISTORY_FILE, json.dumps(heat_history, indent=2, ensure_ascii=False))
 
     # ═══════════════════════════════════════
     # 追多：负费率+在涨

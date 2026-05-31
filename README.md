@@ -49,21 +49,19 @@ WebSocket 订阅 Vitalik 主钱包 `0xd8dA…6045` 的 ERC-20 `Transfer`，亚�
 ## 安装与运行
 
 ```bash
-pip install -r requirements.txt        # requests / httpx / aiohttp / websockets
-
-# 定时类（cron 周期触发）
-*/5 * * * * cd /path/to/web3-quant && python3 oi_funding_scanner.py >> scanner.log 2>&1
-
-# 常驻类（持续运行）
-nohup python3 s7_vitalik_sell_radar.py &
+make install      # = pip install -r requirements.txt
+make oi           # 跑一次性脚本(oi/s3/s6)
+make s7           # 前台跑常驻脚本(s1/s5/s7)，Ctrl-C 退出
 ```
 
-### Telegram 配置（注意各脚本路径/变量名不统一）
-| 脚本 | 来源 | 变量 |
-|---|---|---|
-| oi_funding / s3 | 同目录 `.env.oi` | `TG_BOT_TOKEN` / `TG_CHAT_ID` |
-| s1 / s6 / s7 | 环境变量或同目录 `.env` | `TG_BOT_TOKEN` / `TG_CHAT_ID` |
-| s5 | `~/.env` 或环境变量 | `TELEGRAM_BOT_TOKEN` / `TG_CHAT_ID` |
+- **定时类**(oi/s3/s6，跑完退出)：用 cron，模板见 `deploy/cron.example`。
+- **常驻类**(s1/s5/s7，持续运行)：systemd 模板 `deploy/web3@.service`
+  （`sudo systemctl enable --now web3@s7_vitalik_sell_radar`），或 `make s7 &` / nohup。
+
+### Telegram 配置（已统一）
+所有脚本统一经 `tg_config.py` 的 `load_tg()` 读取，**任意来源/变量名都可**：
+- 来源(优先级)：环境变量 → 脚本目录 `.env` → `.env.oi` → `~/.env`
+- 变量名：`TG_BOT_TOKEN`（或 `TELEGRAM_BOT_TOKEN`）/ `TG_CHAT_ID`（或 `TELEGRAM_CHAT_ID`，支持 `@channel`）
 
 `.env*`、`*.db`、运行时状态/快照(`trades.json`、`*_history.json`、`fr_snapshot.json` 等)均已 `.gitignore`，不入库。
 

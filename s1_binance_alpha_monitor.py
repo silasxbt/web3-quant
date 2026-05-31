@@ -29,8 +29,8 @@ BASE_DIR = Path(__file__).parent
 DB_PATH = str(BASE_DIR / "data" / "alpha.db")
 
 # TG
-TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "")
-TG_CHAT_ID = os.environ.get("TG_CHAT_ID", "")
+from tg_config import load_tg
+TG_BOT_TOKEN, TG_CHAT_ID = load_tg()
 
 # LLM (可选，用于抽取叙事，不配置则降级为规则)
 # 优先从hermes auth.json读credential pool（与scanner一致）

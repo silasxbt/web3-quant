@@ -1,0 +1,24 @@
+# systemd 模板单元 — 用于常驻脚本 (s1 / s5 / s7)
+# 安装: sudo cp deploy/web3@.service /etc/systemd/system/
+#       sudo systemctl daemon-reload
+# 启动: sudo systemctl enable --now web3@s7_vitalik_sell_radar
+#       (实例名 %i = 脚本文件名去掉 .py)
+# 查看: journalctl -u web3@s7_vitalik_sell_radar -f
+#
+# 先按你的环境改 User / WorkingDirectory / 路径。
+[Unit]
+Description=web3-quant scanner %i
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=YOUR_USER
+WorkingDirectory=/path/to/web3-quant
+EnvironmentFile=-/path/to/web3-quant/.env
+ExecStart=/usr/bin/python3 %i.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

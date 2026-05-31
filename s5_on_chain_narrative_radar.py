@@ -52,13 +52,8 @@ def load_env():
                     env[k] = v
     return env
 
-ENV = load_env()
-TG_TOKEN = ENV.get('TELEGRAM_BOT_TOKEN', '') or os.environ.get('TELEGRAM_BOT_TOKEN', '')
-_chat_raw = os.environ.get('TG_CHAT_ID') or ENV.get('TG_CHAT_ID') or '0'
-try:
-    TG_CHAT_ID = int(_chat_raw)
-except (TypeError, ValueError):
-    TG_CHAT_ID = _chat_raw  # 支持 @channel 形式
+from tg_config import load_tg
+TG_TOKEN, TG_CHAT_ID = load_tg()
 
 # DexScreener 链名映射 (chainId -> 内部链代码)
 DS_CHAIN_MAP = {'ethereum': 'eth', 'bsc': 'bsc', 'base': 'base', 'solana': 'sol'}

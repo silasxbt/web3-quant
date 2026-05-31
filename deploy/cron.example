@@ -1,0 +1,7 @@
+# 一次性脚本(跑完即退出)用 cron 周期触发。
+# 安装: crontab -e 后粘贴下面几行，并把路径改成你的实际路径。
+# (macOS 也可用 crontab；常驻脚本 s1/s5/s7 请用 systemd 或 `make s7 &`/nohup)
+
+*/5  * * * * cd /path/to/web3-quant && /usr/bin/python3 oi_funding_scanner.py                 >> oi.log 2>&1
+*/15 * * * * cd /path/to/web3-quant && /usr/bin/python3 s3_accumulation_radar.py              >> s3.log 2>&1
+*/1  * * * * cd /path/to/web3-quant && /usr/bin/python3 s6_futures_alpha_autonomous_trading_v1.py >> s6.log 2>&1

@@ -75,11 +75,10 @@ def load_tg_config():
 
 def send_tg(text):
     try:
-        env = load_tg_config()
-        token = env.get('TG_BOT_TOKEN', env.get('TELEGRAM_BOT_TOKEN', ''))
+        from tg_config import load_tg
+        token, chat_id = load_tg()
         if not token:
             return
-        chat_id = env.get('TG_CHAT_ID', '')
         if not chat_id:
             return
         url = f"https://api.telegram.org/bot{token}/sendMessage"

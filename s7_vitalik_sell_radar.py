@@ -61,8 +61,8 @@ WS_ENDPOINTS = [
 HTTP_RPC = os.environ.get("HTTP_RPC", "https://eth.drpc.org")
 
 # Telegram
-TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "")
-TG_CHAT_ID = os.environ.get("TG_CHAT_ID", "")
+from tg_config import load_tg
+TG_BOT_TOKEN, TG_CHAT_ID = load_tg()
 
 # Known DEX Router addresses (sell destinations)
 KNOWN_DEX_ROUTERS = {

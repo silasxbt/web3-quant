@@ -37,9 +37,8 @@ def load_env():
                 env[k.strip()] = v.strip()
     return env
 
-env = load_env()
-TG_BOT_TOKEN = env.get('TG_BOT_TOKEN', '')
-TG_CHAT_ID = env.get('TG_CHAT_ID', '')
+from tg_config import load_tg
+TG_BOT_TOKEN, TG_CHAT_ID = load_tg()
 
 # ============ 通用工具 ============
 def _get_json(url, params=None, timeout=10, retries=3, headers=None):

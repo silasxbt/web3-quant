@@ -31,8 +31,8 @@ if env_file.exists():
                 os.environ.setdefault(k.strip(), v.strip())
 
 # === 配置 ===
-TG_BOT_TOKEN = os.getenv("TG_BOT_TOKEN", "")
-TG_CHAT_ID = os.getenv("TG_CHAT_ID", "YOUR_CHAT_ID")
+from tg_config import load_tg
+TG_BOT_TOKEN, TG_CHAT_ID = load_tg()
 FAPI = "https://fapi.binance.com"
 
 # 热度历史记录（用于检测首次上榜）

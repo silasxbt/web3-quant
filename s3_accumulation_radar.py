@@ -46,6 +46,12 @@ MIN_VOL_USD = 20_000_000  # 日均成交>$20M才检测放量
 MIN_OI_DELTA_PCT = 3.0    # OI变化至少3%
 MIN_OI_USD = 2_000_000    # 最低OI门槛 $2M
 
+# 广场热度参数
+SQUARE_HISTORY_FILE = Path(__file__).parent / "square_heat_history.json"
+SQUARE_TOP_N = 30         # 采样候选数(按成交额取top)
+SQUARE_MIN_POSTS = 50     # 帖子数下限(滤低基数百分比噪声)
+SQUARE_RISE_PCT = 5.0     # 较上轮帖子数增长>=5%视为急速上升
+
 
 def api_get(endpoint, params=None):
     """币安API请求"""
@@ -71,16 +77,71 @@ def _atomic_write(path, text):
     os.replace(tmp, path)
 
 
+def _square_posts(coin):
+    """查币安广场某币 hashtag 的帖子数(contentCount)；失败返回 None"""
+    try:
+        r = requests.get(
+            "https://www.binance.com/bapi/composite/v4/friendly/pgc/content/queryByHashtag",
+            params={"hashtag": f"#{coin.lower()}", "pageIndex": 1, "pageSize": 1, "orderBy": "HOT"},
+            headers={"User-Agent": "Mozilla/5.0", "Referer": "https://www.binance.com/en/square"},
+            timeout=8,
+        )
+        if r.status_code == 200:
+            return int(r.json().get("data", {}).get("hashtag", {}).get("contentCount", 0))
+    except Exception:
+        pass
+    return None
+
+
 def get_square_heat():
     """
-    币安广场热搜榜 (返回 [{"coin": 符号, "rapidRiser": bool}, ...]，按热度降序)。
-
-    说明: 币安未公开"广场热搜列表"端点(已实测 /pgc 各 hot-tag 路径均 404；
-    仅 queryByHashtag 单标签查询可用)。此处作为优雅降级桩返回空列表 ——
-    s3 会自动只用 CoinGecko 热搜 + 成交量放量两源驱动，不影响运行。
-    若后续拿到有效的广场热搜端点，只需在此实现并返回上述结构即可。
+    币安广场热度: 取成交额 Top N 候选币，查各自广场帖子数，与上轮对比，
+    有基线按增长率排序(捕捉"正在升温")、首轮按绝对量做种子，增长显著者标 rapidRiser。
+    返回 [{"coin":符号, "rapidRiser":bool}, ...] 按热度降序；任何失败返回 []。
     """
-    return []
+    tickers = api_get("/fapi/v1/ticker/24hr")
+    if not tickers:
+        return []
+    stable = {"USDC", "FDUSD", "TUSD", "DAI"}
+    ranked = sorted([t for t in tickers if t["symbol"].endswith("USDT")],
+                    key=lambda t: float(t["quoteVolume"]), reverse=True)
+    coins = []
+    for t in ranked:
+        c = t["symbol"][:-4]
+        if c and c not in stable and c not in coins:
+            coins.append(c)
+        if len(coins) >= SQUARE_TOP_N:
+            break
+
+    prev = {}
+    if SQUARE_HISTORY_FILE.exists():
+        try:
+            prev = json.loads(SQUARE_HISTORY_FILE.read_text())
+        except Exception:
+            prev = {}
+
+    curr = {}
+    for c in coins:
+        n = _square_posts(c)
+        if n is not None:
+            curr[c] = n
+        time.sleep(0.1)
+    if not curr:
+        return []
+
+    scored = []
+    for c, n in curr.items():
+        if n < SQUARE_MIN_POSTS:
+            continue
+        p = prev.get(c)
+        growth = ((n - p) / p * 100) if (p and p > 0) else 0.0
+        rapid = bool(p) and growth >= SQUARE_RISE_PCT
+        key = growth if prev else n / 1e6  # 有基线按增长率，首轮按绝对量做种子
+        scored.append((key, rapid, c))
+    scored.sort(reverse=True)
+
+    _atomic_write(SQUARE_HISTORY_FILE, json.dumps(curr, ensure_ascii=False))
+    return [{"coin": c, "rapidRiser": rapid} for _, rapid, c in scored[:15]]
 
 
 def format_usd(v):

@@ -99,7 +99,7 @@ def mcap_str(v):
 
 def send_telegram(text):
     """发送TG消息"""
-    if not TG_BOT_TOKEN:
+    if not TG_BOT_TOKEN or not TG_CHAT_ID or TG_CHAT_ID == "YOUR_CHAT_ID":
         print("\n[TG] No token, stdout:\n")
         print(text)
         return
@@ -399,7 +399,7 @@ def main():
             if s["in_cg"]: sources.append("CG")
             if s["vol_surge"]: sources.append("放量")
             extra = []
-            if abs(s["d6h"]) >= 3: extra.append(f"OI{s['d6h']:+.0f}%")
+            if abs(s["d6h"]) >= MIN_OI_DELTA_PCT: extra.append(f"OI{s['d6h']:+.0f}%")
             if s["fr_pct"] < -0.03: extra.append(f"费率{s['fr_pct']:.2f}%")
             src_str = "/".join(sources)
             if extra:
@@ -431,7 +431,7 @@ def main():
     for sym, oi in oi_map.items():
         if abs(oi["d6h"]) >= 8:
             d = coin_data.get(sym)
-            if d and d["heat"] == 0:
+            if d and d["heat"] == 0 and d["oi_usd"] >= MIN_OI_USD:
                 oi_alerts.append(d)
     oi_alerts.sort(key=lambda x: abs(x["d6h"]), reverse=True)
 

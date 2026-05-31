@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 OI持续放大 + 费率由正转负 扫描器
-- 每分钟运行一次
+- 由 cron 定时运行(建议每 5 分钟一次)
 - 检测: OI持续放大(4段递增, 总涨幅>8%) + 费率由正转负
 - 去重: 同一币种24小时内只推一次
 - 纯API零成本
@@ -41,6 +41,28 @@ env = load_env()
 TG_BOT_TOKEN = env.get('TG_BOT_TOKEN', '')
 TG_CHAT_ID = env.get('TG_CHAT_ID', '')
 
+# ============ 通用工具 ============
+def _get_json(url, params=None, timeout=10, retries=3, headers=None):
+    """带退避重试的 GET JSON；429/超时/异常重试，全部失败返回 None"""
+    for i in range(retries):
+        try:
+            r = requests.get(url, params=params, timeout=timeout, headers=headers)
+            if r.status_code == 429:
+                time.sleep(2 * (i + 1))
+                continue
+            r.raise_for_status()
+            return r.json()
+        except Exception:
+            if i < retries - 1:
+                time.sleep(1)
+    return None
+
+def _atomic_write(path, text):
+    """原子写入，避免进程中断导致状态文件损坏"""
+    tmp = f"{path}.tmp"
+    Path(tmp).write_text(text)
+    os.replace(tmp, path)
+
 # ============ TG推送 ============
 def send_tg(text):
     if not TG_BOT_TOKEN or not TG_CHAT_ID:
@@ -76,21 +98,30 @@ def load_alert_history():
     return {}
 
 def save_alert_history(history):
-    ALERT_HISTORY_FILE.write_text(json.dumps(history))
+    _atomic_write(ALERT_HISTORY_FILE, json.dumps(history))
 
 def is_duplicate(symbol, history):
-    if symbol not in history:
+    ts = history.get(symbol)
+    if not ts:
         return False
-    last_alert = datetime.fromisoformat(history[symbol])
+    try:
+        last_alert = datetime.fromisoformat(ts)
+    except Exception:
+        return False
     return (datetime.now() - last_alert).total_seconds() < DEDUP_HOURS * 3600
 
 def mark_alerted(symbol, history):
     history[symbol] = datetime.now().isoformat()
-    # 清理过期记录
+    # 清理过期记录(跳过损坏条目)
     cutoff = datetime.now() - timedelta(hours=DEDUP_HOURS * 2)
-    history = {k: v for k, v in history.items() 
-               if datetime.fromisoformat(v) > cutoff}
-    return history
+    clean = {}
+    for k, v in history.items():
+        try:
+            if datetime.fromisoformat(v) > cutoff:
+                clean[k] = v
+        except Exception:
+            continue
+    return clean
 
 # ============ 费率快照 ============
 def load_fr_snapshot():
@@ -102,51 +133,47 @@ def load_fr_snapshot():
     return {}
 
 def save_fr_snapshot(snapshot):
-    FR_SNAPSHOT_FILE.write_text(json.dumps(snapshot))
+    _atomic_write(FR_SNAPSHOT_FILE, json.dumps(snapshot))
 
 def prior_funding_positive(symbol):
     """确认转负前至少 MIN_FR_PERIODS_POSITIVE 个结算周期为正(用真实结算历史校验)"""
+    hist = _get_json('https://fapi.binance.com/fapi/v1/fundingRate',
+                     params={'symbol': symbol, 'limit': MIN_FR_PERIODS_POSITIVE + 1})
+    if not hist:
+        return True  # 拉取失败时不因此漏掉信号(快照已确认刚转负)
     try:
-        hist = requests.get('https://fapi.binance.com/fapi/v1/fundingRate',
-            params={'symbol': symbol, 'limit': MIN_FR_PERIODS_POSITIVE + 1}, timeout=10).json()
         rates = [float(x['fundingRate']) for x in hist]
         prior = rates[:-1]  # 排除最近一期(即刚转负的那期)
         if len(prior) < MIN_FR_PERIODS_POSITIVE:
             return False
         return all(r >= 0 for r in prior[-MIN_FR_PERIODS_POSITIVE:])
     except Exception:
-        return True  # 拉取失败时不因此漏掉信号(快照已确认刚转负)
+        return True
 
 # ============ 核心扫描 ============
 def scan():
     ts_start = time.time()
     
     # 1. 获取所有永续合约
-    try:
-        info = requests.get('https://fapi.binance.com/fapi/v1/exchangeInfo', timeout=10).json()
-        symbols = [s['symbol'] for s in info['symbols'] 
-                   if s['contractType'] == 'PERPETUAL' and s['quoteAsset'] == 'USDT' and s['status'] == 'TRADING']
-    except Exception as e:
-        print(f"[ERROR] exchangeInfo: {e}")
+    info = _get_json('https://fapi.binance.com/fapi/v1/exchangeInfo')
+    if not info or 'symbols' not in info:
+        print("[ERROR] exchangeInfo 拉取失败")
         return []
-    
+    symbols = [s['symbol'] for s in info['symbols']
+               if s['contractType'] == 'PERPETUAL' and s['quoteAsset'] == 'USDT' and s['status'] == 'TRADING']
+
     # 2. 批量获取24h行情(过滤低量币)
-    try:
-        tickers = requests.get('https://fapi.binance.com/fapi/v1/ticker/24hr', timeout=10).json()
-        ticker_map = {t['symbol']: t for t in tickers}
-    except Exception as e:
-        print(f"[ERROR] ticker: {e}")
+    tickers = _get_json('https://fapi.binance.com/fapi/v1/ticker/24hr')
+    if not tickers:
+        print("[ERROR] ticker 拉取失败")
         return []
-    
+    ticker_map = {t['symbol']: t for t in tickers}
+
     active = [s for s in symbols if float(ticker_map.get(s, {}).get('quoteVolume', 0)) > MIN_VOLUME_USDT]
-    
+
     # 3. 批量获取当前费率 (一次拿全部)
-    try:
-        fr_all = requests.get('https://fapi.binance.com/fapi/v1/premiumIndex', timeout=10).json()
-        fr_current = {item['symbol']: float(item['lastFundingRate']) for item in fr_all}
-    except Exception as e:
-        print(f"[ERROR] premiumIndex: {e}")
-        fr_current = {}
+    fr_all = _get_json('https://fapi.binance.com/fapi/v1/premiumIndex')
+    fr_current = {item['symbol']: float(item['lastFundingRate']) for item in fr_all} if fr_all else {}
 
     # 拉取失败时不要用空数据覆盖快照(否则丢状态、漏掉下一轮转负信号)
     if not fr_current:
@@ -188,8 +215,8 @@ def scan():
             continue
         try:
             # OI历史
-            oi_hist = requests.get('https://fapi.binance.com/futures/data/openInterestHist', 
-                params={'symbol': sym, 'period': '1h', 'limit': 48}, timeout=10).json()
+            oi_hist = _get_json('https://fapi.binance.com/futures/data/openInterestHist',
+                params={'symbol': sym, 'period': '1h', 'limit': 48})
             
             oi_chg = 0
             segs = []

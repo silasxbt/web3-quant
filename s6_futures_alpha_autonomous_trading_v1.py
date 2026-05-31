@@ -25,6 +25,29 @@ LEVERAGE = 3                 # 杠杆
 COOLDOWN_HOURS = 4           # 同一币种冷却时间
 MIN_VOLUME_M = 10            # 最小24h成交额(百万U)
 
+# === 实盘开关 (默认关闭=模拟盘；不显式设 S6_LIVE=1 则行为完全不变) ===
+S6_LIVE = os.getenv("S6_LIVE", "0") == "1"
+BINANCE_TESTNET = os.getenv("BINANCE_TESTNET", "1") != "0"   # 默认测试网
+try:
+    MAX_DAILY_LOSS_USD = float(os.getenv("MAX_DAILY_LOSS_USD", "20"))
+except ValueError:
+    MAX_DAILY_LOSS_USD = 20.0
+_EX = None
+
+def get_exchange():
+    global _EX
+    if _EX is None:
+        from binance_futures import BinanceFutures
+        _EX = BinanceFutures(os.getenv("BINANCE_API_KEY", ""),
+                             os.getenv("BINANCE_API_SECRET", ""), testnet=BINANCE_TESTNET)
+    return _EX
+
+def today_realized_pnl(data):
+    """今日(UTC+8)已实现盈亏合计，用于日亏熔断"""
+    today = datetime.now(TZ_UTC8).strftime("%Y-%m-%d")
+    return sum((t.get("pnl_usd") or 0) for t in data["trades"]
+               if t["status"] == "closed" and (t.get("exit_time") or "")[:10] == today)
+
 # === 通用工具 ===
 def _atomic_write(path, text):
     """原子写入，避免进程中断损坏账本/状态文件"""
@@ -428,7 +451,37 @@ def execute_open(data, state, symbol, price, signal):
     else:
         sl = round(price * (1 + signal["sl_pct"]), 6)
         tp = round(price * (1 - signal["tp_pct"]), 6)
-    
+
+    # 实盘下单(默认关闭): 市价开仓 + 交易所原生 STOP_MARKET/TAKE_PROFIT_MARKET 兜底止损止盈
+    live_info = {}
+    if S6_LIVE:
+        ex = get_exchange()
+        bal = ex.available_usdt()
+        if bal is not None:
+            position_usd = bal * POSITION_PCT / 100  # 用真实可用余额定仓
+        qty = ex.round_qty(symbol, position_usd * LEVERAGE / price)
+        if qty <= 0:
+            log(f"[实盘] {symbol} 数量过小，跳过")
+            return
+        side = "BUY" if signal["direction"] == "long" else "SELL"
+        close_side = "SELL" if signal["direction"] == "long" else "BUY"
+        ex.set_leverage(symbol, LEVERAGE)
+        st, resp = ex.market(symbol, side, qty)
+        if st != 200:
+            log(f"[实盘] 开仓失败 {symbol}: {resp}")
+            return
+        st_sl, r_sl = ex.stop_close(symbol, close_side, "STOP_MARKET", ex.round_price(symbol, sl))
+        st_tp, r_tp = ex.stop_close(symbol, close_side, "TAKE_PROFIT_MARKET", ex.round_price(symbol, tp))
+        if st_sl != 200:
+            log(f"[实盘] ⚠️ {symbol} 止损单失败: {r_sl}")
+        if st_tp != 200:
+            log(f"[实盘] ⚠️ {symbol} 止盈单失败: {r_tp}")
+        live_info = {
+            "live": True, "qty": qty,
+            "sl_order_id": str(r_sl.get("orderId", "")) if st_sl == 200 else "",
+            "tp_order_id": str(r_tp.get("orderId", "")) if st_tp == 200 else "",
+        }
+
     trade = {
         "id": next_id(data),
         "symbol": symbol,
@@ -457,7 +510,8 @@ def execute_open(data, state, symbol, price, signal):
         },
         "post_review": None
     }
-    
+    trade.update(live_info)
+
     data["trades"].append(trade)
     save_trades(data)
     
@@ -468,7 +522,7 @@ def execute_open(data, state, symbol, price, signal):
     direction_cn = "做多" if signal["direction"] == "long" else "做空"
     
     msg = f"""```
-[扫描开仓] #{trade['id']}
+[扫描开仓{'·实盘' if S6_LIVE else '·模拟'}] #{trade['id']}
 币种: {symbol}
 方向: {direction_cn} {LEVERAGE}x
 入场: {price}
@@ -549,32 +603,60 @@ def swap_weakest(data, state, open_positions, new_signal, tickers):
 
 
 # === 持仓结算(止盈/止损) ===
+def _paper_trigger(t, price):
+    """模拟盘: 现价是否触及 SL/TP，返回 'stop_loss'/'take_profit'/None"""
+    if t["direction"] == "long":
+        if price <= t["stop_loss"]:
+            return "stop_loss"
+        if price >= t["take_profit"]:
+            return "take_profit"
+    else:
+        if price >= t["stop_loss"]:
+            return "stop_loss"
+        if price <= t["take_profit"]:
+            return "take_profit"
+    return None
+
+
+def _reconcile_live(t, price_map):
+    """实盘: 查交易所持仓是否已被原生 SL/TP 平掉，返回 (reason, exit_price) 或 (None, None)"""
+    ex = get_exchange()
+    if abs(ex.position_amt(t["symbol"])) > 1e-9:
+        return None, None  # 仍持仓
+    open_ids = ex.open_order_ids(t["symbol"])
+    sl_id, tp_id = t.get("sl_order_id"), t.get("tp_order_id")
+    if tp_id and tp_id not in open_ids and (not sl_id or sl_id in open_ids):
+        reason = "take_profit"
+    elif sl_id and sl_id not in open_ids and (not tp_id or tp_id in open_ids):
+        reason = "stop_loss"
+    else:
+        # 兜底: 用现价相对开盘价方向推断
+        up = price_map.get(t["symbol"], t["entry_price"]) >= t["entry_price"]
+        long = t["direction"] == "long"
+        reason = "take_profit" if (up == long) else "stop_loss"
+    ex.cancel_all(t["symbol"])  # 撤掉残留的另一张单
+    return reason, (t["stop_loss"] if reason == "stop_loss" else t["take_profit"])
+
+
 def settle_positions(data, tickers):
-    """遍历持仓，现价触及止损/止盈则按触发价平仓结算。返回平掉的笔数。
-    注：用每分钟现价判定(1分钟粒度)，可能漏掉分钟内瞬时插针，模拟盘可接受。"""
+    """每轮先结算持仓: 模拟盘按现价判 SL/TP；实盘按交易所原生单成交情况对账。"""
     price_map = {t['symbol']: float(t['lastPrice']) for t in tickers}
     closed = 0
     for t in data["trades"]:
         if t["status"] != "open":
             continue
-        price = price_map.get(t["symbol"])
-        if price is None:
-            continue
-        reason = None
-        if t["direction"] == "long":
-            if price <= t["stop_loss"]:
-                reason = "stop_loss"
-            elif price >= t["take_profit"]:
-                reason = "take_profit"
+        if t.get("live") and S6_LIVE:
+            reason, exit_price = _reconcile_live(t, price_map)
+            if reason is None:
+                continue
         else:
-            if price >= t["stop_loss"]:
-                reason = "stop_loss"
-            elif price <= t["take_profit"]:
-                reason = "take_profit"
-        if not reason:
-            continue
-        # 以触发的 SL/TP 价结算(贴近实际成交)
-        exit_price = t["stop_loss"] if reason == "stop_loss" else t["take_profit"]
+            price = price_map.get(t["symbol"])
+            if price is None:
+                continue
+            reason = _paper_trigger(t, price)
+            if reason is None:
+                continue
+            exit_price = t["stop_loss"] if reason == "stop_loss" else t["take_profit"]
         if t["direction"] == "long":
             pnl_pct = (exit_price - t["entry_price"]) / t["entry_price"] * 100 * t["leverage"]
         else:
@@ -622,6 +704,11 @@ def scan():
     open_symbols = set(t["symbol"] for t in open_positions)
 
     if len(open_positions) >= MAX_OPEN_POSITIONS:
+        return
+
+    # 日亏熔断: 今日已实现亏损达上限则停止开新仓
+    if today_realized_pnl(data) <= -MAX_DAILY_LOSS_USD:
+        log(f"今日已实现亏损达上限 ${MAX_DAILY_LOSS_USD:.0f}，停止开新仓")
         return
     
     # 过滤USDT合约 + 最小成交量
@@ -689,8 +776,8 @@ def scan():
     slots = MAX_OPEN_POSITIONS - len(open_positions)
     if slots > 0:
         execute_open(data, state, best["symbol"], best["price"], best)
-    elif best["strength"] == "S":
-        # 满仓但遇到S级信号 → 换掉最弱的持仓
+    elif best["strength"] == "S" and not S6_LIVE:
+        # 满仓但遇到S级信号 → 换掉最弱的持仓 (仅模拟盘；实盘换仓涉及交易所平仓+撤单，暂不自动换)
         swap_weakest(data, state, open_positions, best, tickers)
 
 

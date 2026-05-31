@@ -37,10 +37,12 @@
 关键词分类（马斯克/川普 ★★★、币安/CZ ★★★、名人热点 ★★、新叙事 ★★）+ **动量优先**：连涨 3 轮且 >5% 才推；安全检查(rugcheck/goplus 拦蜜罐/可增发)。状态存 `~/crypto-trading/`。
 - 加固：**数据源从被 Cloudflare 封的 GMGN 切换到 DexScreener**（boosts/profiles 发现 + 批量行情，覆盖 eth/bsc/base/sol）；修 `init_db` 目录缺失崩溃；TG 配置修复。
 
-### `s6_futures_alpha_autonomous_trading_v1.py` — 期货自动交易（⚠️ 模拟盘）
-**不下真单、不用交易所 Key**，记录虚拟仓位到 `trades.json`。四策略（极端深负费率做多 / 极端正费率做空 / 暴跌反弹 / 暴涨回落）+ BTC/恐惧贪婪/OI/量能 多因子 ≥3/7 门槛。
-- 加固：补齐**止盈/止损平仓闭环**（每轮先按 SL/TP 结算再开仓）；账本原子写；持久化真实开盘价。
-- 🔴 接实盘前必须：把 `settle_positions` 改为真正向交易所**下平仓单**（最好用交易所原生 stop 单兜底），否则进程中断期间持仓无人止损。
+### `s6_futures_alpha_autonomous_trading_v1.py` — 期货自动交易（默认模拟盘，可选实盘）
+四策略（极端深负费率做多 / 极端正费率做空 / 暴跌反弹 / 暴涨回落）+ BTC/恐惧贪婪/OI/量能 多因子 ≥3/7 门槛；每轮先结算 SL/TP 再开仓；账本原子写；**日亏熔断**。
+- **默认模拟盘**：记录虚拟仓位到 `trades.json`，不下真单、不用 Key。
+- **实盘模式（可选，默认关闭）**：设 `S6_LIVE=1` 启用；**默认接 Binance 测试网**（主网需另设 `BINANCE_TESTNET=0`）。市价开仓 + 交易所原生 `STOP_MARKET`/`TAKE_PROFIT_MARKET` 兜底止损止盈（脚本宕机止损仍在交易所侧生效），`settle_positions` 对账交易所成交。实盘客户端见 `binance_futures.py`。
+  - 环境变量：`BINANCE_API_KEY` / `BINANCE_API_SECRET`（建议仅开合约交易、禁提现、绑 IP）、`MAX_DAILY_LOSS_USD`（默认 20，今日已实现亏损达上限即停开新仓）。
+  - ⚠️ 四策略**未经实盘验证**，务必先在**测试网**充分跑通；实盘风险自负。
 
 ### `s7_vitalik_sell_radar.py` — Vitalik 抛售雷达
 WebSocket 订阅 Vitalik 主钱包 `0xd8dA…6045` 的 ERC-20 `Transfer`，亚秒级发现转出，按去向分类（DEX/CEX/LP Pool），DexScreener 查价后推送。多 RPC 故障转移 + 退避重连 + 去重。
@@ -67,6 +69,6 @@ make s7           # 前台跑常驻脚本(s1/s5/s7)，Ctrl-C 退出
 
 ## 已知限制
 - **s5 数据源特性**：DexScreener 发现的是 boosted/新建档币（非全量新币 firehose）；`holders`/聪明钱字段无（置 0）；FLAP 形态已停用（原依赖 GMGN）。
-- **s6 是模拟盘**：仅记录虚拟盈亏，接实盘需自行实现下单与真实止损执行。
+- **s6 默认模拟盘**：`S6_LIVE=1` 可开实盘（默认走 Binance 测试网，原生止损单兜底）；策略未经实盘验证，先测试网、风险自负。
 - **非官方接口依赖**：s1/s3 用币安 `bapi`（公告/广场/市值）、s7 用免费公共 RPC——均可能被改版或限流，已做降级/容错但非长期保证。
 - 部分脚本单轮请求较多（s3 ~2–3min），适合较长定时间隔。

@@ -1,0 +1,18 @@
+# secrets
+.env
+.env.oi
+
+# 运行时状态 / 快照 / 数据库
+data/
+*.db
+*.log
+fr_snapshot.json
+oi_funding_alerts.json
+heat_history.json
+narrative_seen.json
+flap_seen.json
+
+# python
+__pycache__/
+*.pyc
+.DS_Store

@@ -1,0 +1,146 @@
+[runtime]
+mode = "testnet"
+environment = "mac_mini_hk_proxy"
+poll_interval_secs = 5
+
+[network]
+proxy_mode = "system_global"
+latency_warn_ms = 500
+latency_critical_ms = 1000
+
+[exchanges.binance]
+enabled = true
+market_types = ["usdm_perp", "coinm_perp"]
+auto_discover = true
+
+[exchanges.okx]
+enabled = true
+market_types = ["usdt_swap", "coin_swap"]
+auto_discover = true
+
+[symbols]
+mode = "auto_common"
+blacklist = [
+  "BTC",
+  "ETH",
+  "BNB",
+  "SOL",
+  "XRP",
+  "DOGE",
+  "ADA",
+  "AVAX",
+  "LINK",
+  "TRX",
+  "LTC",
+  "BCH",
+  "DOT",
+  "MATIC",
+]
+
+[strategy.spread]
+enabled = true
+min_gross_spread_bps = 450
+max_gross_spread_bps = 3000
+min_estimated_net_spread_bps = 400
+max_slippage_bps = 50
+round_trip_fee_bps = 20
+default_notional_usdt = 100
+close_spread_bps = 150
+close_alert_once = true
+
+[strategy.position_sizing]
+enabled = true
+depth_window_bps = 50
+target_notional_usdt = 100
+full_size_min_depth_usdt = 500
+half_size_min_depth_usdt = 300
+quarter_size_min_depth_usdt = 150
+max_depth_usage_ratio = 0.20
+watch_only_below_depth_usdt = 150
+
+[risk.funding]
+warn_only = true
+abnormal_abs_rate_bps = 50
+abnormal_diff_bps = 50
+near_settlement_minutes = 30
+warn_on_period_change = true
+warn_on_cap_floor_change = true
+
+[risk.exchange_restrictions]
+warn_on_order_limit_change = true
+warn_on_position_limit_change = true
+warn_on_reduce_only = true
+warn_on_open_disabled = true
+warn_on_trade_suspended = true
+warn_on_transfer_suspended = true
+warn_on_margin_rate_change = true
+warn_on_mark_price_abnormal = true
+
+[storage]
+data_dir = "data"
+reports_dir = "reports"
+log_retention_days = 30
+daily_report_enabled = true
+
+[alert.telegram]
+enabled = true
+chat_id = ""
+bot_token_env = "TELEGRAM_BOT_TOKEN"
+interactive = true
+manual_refresh_enabled = true
+auto_update_intervals_sec = [5, 10, 20]
+close_alert_once = true
+
+[alert.macos]
+enabled = true
+sound = false
+
+[web]
+enabled = true
+listen_addr = "127.0.0.1:8787"
+
+[ui]
+language = "zh-CN"
+module_explanations_enabled = true
+
+[lightning_audit]
+enabled = true
+config_path = "data/lightning-audit-config.json"
+openai_compatible_base_url = "https://api.openai.com/v1"
+api_key_env = "OPENAI_API_KEY"
+default_model = "gpt-4.1-mini"
+default_prompt_id = "strict_token_equivalence"
+request_timeout_secs = 45
+temperature = 0.1
+max_tokens = 1200
+show_process_log = true
+
+[system]
+auto_start_on_boot = false
+
+[trading]
+enabled = true
+allow_real_orders = false
+environment = "testnet"
+planned_for_phase_2 = true
+one_click_open_enabled = true
+require_second_confirmation = false
+
+[trading.safety]
+max_notional_usdt = 100
+max_unhedged_notional_usdt = 20
+max_order_wait_ms = 1500
+kill_switch_file = "data/KILL_SWITCH"
+
+[trading.binance]
+api_key_env = "BINANCE_API_KEY"
+api_secret_env = "BINANCE_API_SECRET"
+usdm_testnet_base_url = "https://demo-fapi.binance.com"
+coinm_testnet_base_url = "https://testnet.binancefuture.com"
+
+[trading.okx]
+api_key_env = "OKX_API_KEY"
+api_secret_env = "OKX_API_SECRET"
+passphrase_env = "OKX_API_PASSPHRASE"
+demo_trading = true
+demo_header = "x-simulated-trading: 1"

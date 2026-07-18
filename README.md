@@ -2,6 +2,8 @@
 
 一组独立运行的市场/链上信号扫描器，命中条件即推送 Telegram。全部走公开 API，零成本、无需付费 Key（s1 可选接 LLM）。
 
+同一仓库下还包含 `future-quant/`：跨交易所永续合约价差监控与闪电审计项目。两个项目现在统一归在 `web3-quant` 仓库里。
+
 > ⚠️ 仅供研究学习，非投资建议。涉及高风险/高方差的加密市场，自负盈亏。
 > 全部脚本已逐个审查并修复加固（详见各脚本说明与「已知限制」）。
 
@@ -66,6 +68,12 @@ make s7           # 前台跑常驻脚本(s1/s5/s7)，Ctrl-C 退出
 - 变量名：`TG_BOT_TOKEN`（或 `TELEGRAM_BOT_TOKEN`）/ `TG_CHAT_ID`（或 `TELEGRAM_CHAT_ID`，支持 `@channel`）
 
 `.env*`、`*.db`、运行时状态/快照(`trades.json`、`*_history.json`、`fr_snapshot.json` 等)均已 `.gitignore`，不入库。
+
+## 目录结构
+
+- `./`：现有 Python 版信号扫描器
+- `./future-quant/`：Rust 版永续合约价差监控与审计
+- 两者共享同一个 Git 仓库与远端
 
 ## 已知限制
 - **s5 数据源特性**：DexScreener 发现的是 boosted/新建档币（非全量新币 firehose）；`holders`/聪明钱字段无（置 0）；FLAP 形态已停用（原依赖 GMGN）。

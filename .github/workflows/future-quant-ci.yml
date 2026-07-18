@@ -1,0 +1,45 @@
+name: future-quant CI
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "future-quant/**"
+      - ".github/workflows/future-quant-ci.yml"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "future-quant/**"
+      - ".github/workflows/future-quant-ci.yml"
+
+jobs:
+  verify:
+    name: Verify future-quant
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: future-quant
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Check Rust
+        run: cargo check
+
+      - name: Test
+        run: cargo test
+
+      - name: Build
+        run: cargo build
+
+      - name: Check shell syntax
+        run: zsh -n FutureQuant.command scripts/*.sh scripts/*.command

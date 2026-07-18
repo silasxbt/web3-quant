@@ -1,0 +1,7 @@
+/target/
+/data/
+/reports/
+/config/local.toml
+/config/env.local
+.DS_Store
+*.log

@@ -38,8 +38,9 @@ def summarize(pos, evs, price=None):
     avg_cap = cap_time / max(now - t0, 1)
     if value is not None:
         pnl = value + wd + fees - dep - cost
-        out.update(pnl=pnl, apr=pnl / avg_cap * 365 / max(out["days"], 1 / 24) if avg_cap else None,
-                   fee_apr=fees / avg_cap * 365 / max(out["days"], 1 / 24) if avg_cap else None)
+        ok = avg_cap and out["days"] >= 1  # 不足 1 天年化会被放大到没有意义
+        out.update(pnl=pnl, apr=pnl / avg_cap * 365 / out["days"] if ok else None,
+                   fee_apr=fees / avg_cap * 365 / out["days"] if ok else None)
         if price and not closed and (stock or stable):
             hodl = stock * price + stable
             out.update(hodl_value=hodl, vs_hodl=value + fees - hodl)

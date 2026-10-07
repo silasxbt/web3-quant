@@ -61,7 +61,15 @@ $("pv-del").onclick = async () => {
 document.querySelector("main").insertAdjacentHTML("afterbegin", `<section class="pv-ledger" id="pv-ledger" style="margin-top:0">
   <h2>我的仓位 <small id="pv-total"></small><span class="pv-actions">
     <button type="button" class="pv-btn" id="pv-closed" aria-pressed="false">显示已平仓</button>
-    <button type="button" class="pv-btn pv-primary" id="pv-new">按当前参数新建仓位</button></span></h2>
+    <button type="button" class="pv-btn" id="pv-new">按当前参数新建</button>
+    <button type="button" class="pv-btn pv-primary" id="pv-imp" aria-expanded="false">快捷导入</button></span></h2>
+  <form id="pv-import" class="pv-import" hidden>
+    <label for="pv-ids">仓位 NFT 编号（每行或用逗号分隔，最多 10 个）</label>
+    <div class="pv-row"><textarea id="pv-ids" rows="2" spellcheck="false" placeholder="2807359, 7630198"></textarea>
+    <button type="submit" class="pv-btn pv-primary" id="pv-imp-go">导入</button></div>
+    <p class="hint">自动识别 PancakeSwap / Uniswap、池子和上下沿，并按导入时链上持仓记为本金基准。编号在交易所仓位页面或钱包 NFT 里能看到。</p>
+    <div id="pv-imp-out"></div>
+  </form>
   <div id="pv-list" class="dim">读取中…</div></section>`);
 let showClosed = false, open = null, rows = [];
 const TYPES = {deposit: "投入", withdraw: "提取", collect: "领取手续费", cost: "成本", snapshot: "记录价值"};
@@ -70,7 +78,7 @@ function draw() {
   const vis = rows.filter(r => showClosed || r.status !== "closed");
   const live = rows.filter(r => r.status !== "closed"), s = k => live.reduce((a, r) => a + (r.summary[k] || 0), 0);
   $("pv-total").textContent = live.length ? `持仓 ${live.length} 个 · 当前价值 ${usd(s("value"), 0)} · 累计手续费 ${usd(s("fees"))} · 盈亏 ${signed(s("pnl"), usd)}` : "";
-  if (!vis.length) { $("pv-list").className = "empty"; $("pv-list").innerHTML = "还没有仓位。在左侧填好池子、上下沿后点「按当前参数新建仓位」。"; return; }
+  if (!vis.length) { $("pv-list").className = "empty"; $("pv-list").innerHTML = "还没有仓位。点「快捷导入」输入仓位 NFT 编号即可，或在左侧填好池子和上下沿后点「按当前参数新建」。"; return; }
   $("pv-list").className = "scroll";
   $("pv-list").innerHTML = `<table class="pv-table"><tr><th>仓位</th><th>区间</th><th>现价</th><th>投入</th><th>当前价值</th><th>手续费</th><th>盈亏</th><th>实际年化</th><th>手续费年化</th><th>相对持币</th><th>时长</th><th></th></tr>` +
     vis.map(r => { const s = r.summary, p = r.live?.price;
@@ -144,6 +152,22 @@ $("pv-list").addEventListener("click", async e => {
   if (b.dataset.a === "sync") { b.disabled = true; b.textContent = "同步中…";
     try { await req("POST", `/p/positions/${id}/sync`); await loadPositions(); } catch (err) { alert(err.message); b.disabled = false; b.textContent = "同步"; } }
 });
+$("pv-imp").onclick = () => { const f = $("pv-import"), o = f.hidden; f.hidden = !o; $("pv-imp").setAttribute("aria-expanded", o); if (o) $("pv-ids").focus(); };
+$("pv-import").onsubmit = async e => {
+  e.preventDefault();
+  const ids = [...new Set(($("pv-ids").value.match(/\d+/g) || []).map(Number))];
+  if (!ids.length) { $("pv-imp-out").innerHTML = `<p class="err">请输入至少一个编号</p>`; return; }
+  if (ids.length > 10) { $("pv-imp-out").innerHTML = `<p class="err">一次最多 10 个</p>`; return; }
+  const b = $("pv-imp-go"); b.disabled = true; b.textContent = `读取 ${ids.length} 个仓位…`;
+  try {
+    const res = await req("POST", "/p/import", {token_ids: ids});
+    $("pv-imp-out").innerHTML = `<ul class="pv-imp-res">${res.map(r => r.ok
+      ? `<li><span class="dot d-ok"></span>#${r.token_id} → <b>${esc(r.name)}</b> ${usd(r.lo)} – ${usd(r.hi)}，价值 ${usd(r.value)}，未领手续费 ${usd(r.fees)}${r.in_range ? "" : `，<span class="neg">当前不在区间内</span>`}</li>`
+      : `<li><span class="dot d-bad"></span>#${r.token_id}：${esc(r.error)}</li>`).join("")}</ul>`;
+    if (res.some(r => r.ok)) { $("pv-ids").value = res.filter(r => !r.ok).map(r => r.token_id).join(", "); await loadPositions(); }
+  } catch (err) { $("pv-imp-out").innerHTML = `<p class="err">${esc(err.message)}</p>`; }
+  b.disabled = false; b.textContent = "导入";
+};
 $("pv-closed").onclick = () => { showClosed = !showClosed; $("pv-closed").setAttribute("aria-pressed", showClosed); draw(); };
 $("pv-new").onclick = async () => {
   const f = form();

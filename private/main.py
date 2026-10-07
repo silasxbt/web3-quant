@@ -171,6 +171,8 @@ def list_positions():
 
 @app.post("/p/positions")
 def create_position(p: Position):
+    if sum(x.get("status") != "closed" for x in store.positions()) >= MAX_OPEN:
+        raise HTTPException(400, f"最多同时记录 {MAX_OPEN} 个仓位，先平仓或删除一个")
     d = p.model_dump(); d["opened"] = d["opened"] or time.time(); d["status"] = "open"
     d["pool"] = d["pool"].lower(); d["lo"], d["hi"] = sorted((d["lo"], d["hi"]))
     return {"id": store.save_position(d)}
@@ -218,6 +220,47 @@ def sync_snapshot(pid: str):
 def delete_event(eid: str):
     if not store.delete_event(eid): raise HTTPException(404, "记录不存在")
     return {"ok": True}
+
+MAX_OPEN = 10
+
+class ImportReq(BaseModel):
+    token_ids: list[int] = Field(min_length=1, max_length=10)
+
+def _ticker(info):
+    sym = info["symbol0"] if info["stable_is_1"] else info["symbol1"]
+    return sym.upper()
+
+def _import_one(tid, existing):
+    if tid in existing: return {"token_id": tid, "ok": False, "error": "已经导入过"}
+    try:
+        _, pool = onchain.locate(tid)
+        info = light_info(pool)
+        if info["stable"] not in analytics.STABLES: raise ValueError("只支持股票/USDT 或 股票/USDC 的池子")
+        n = onchain.read(info, tid)
+    except Exception as e:
+        return {"token_id": tid, "ok": False, "error": str(e)[:160]}
+    if not n["liquidity"]: return {"token_id": tid, "ok": False, "error": "仓位流动性为 0（已撤池）"}
+    now = time.time()
+    pid = store.save_position({"name": f"{_ticker(info)} #{tid}", "pool": info["pool"], "lo": n["lo"], "hi": n["hi"],
+                               "token_id": tid, "opened": now, "status": "open", "note": "快捷导入"})
+    store.add_event({"position": pid, "type": "deposit", "ts": now, "stock": n["stock"], "stable": n["stable"],
+                     "value": n["value"], "price": n["price"], "fees": 0, "cost": 0,
+                     "note": "快捷导入：按导入时链上持仓作为本金基准，可删掉后补记真实投入"})
+    return {"token_id": tid, "ok": True, "id": pid, "name": f"{_ticker(info)} #{tid}", "lo": n["lo"], "hi": n["hi"],
+            "value": n["value"], "fees": n["fees"], "in_range": n["in_range"]}
+
+@app.post("/p/import")
+def quick_import(req: ImportReq):
+    ids = list(dict.fromkeys(req.token_ids))
+    ps = store.positions()
+    existing = {p.get("token_id") for p in ps}
+    active = sum(p.get("status") != "closed" for p in ps)
+    new = [i for i in ids if i not in existing]
+    if active + len(new) > MAX_OPEN:
+        raise HTTPException(400, f"最多同时记录 {MAX_OPEN} 个仓位，当前已有 {active} 个，还能导入 {max(MAX_OPEN - active, 0)} 个")
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(5) as ex:
+        return list(ex.map(lambda t: _import_one(t, existing), ids))
 
 @app.get("/p/nft")
 def nft(pool: str, token_id: int):

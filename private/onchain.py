@@ -42,3 +42,15 @@ def read(pool_info, token_id):
         return dict(token_id=int(token_id), owner=owner, liquidity=L, lo=lo, hi=hi, in_range=lo <= p <= hi,
                     stock=stock, stable=stable, value=stock * p + stable, fees=fs * p + fst, price=p)
     return cached(("nft", pool_info["pool"], int(token_id)), 30, f)
+
+def locate(token_id):
+    """在 PancakeSwap / Uniswap 两个仓位管理合约里找这个 NFT，返回 (factory, 池子地址)。"""
+    from app.chain import addr as _a
+    tid = format(int(token_id), "064x")
+    for factory, npm in NPM.items():
+        try: w = words(call(npm, "positions(uint256)", tid))
+        except RuntimeError: continue
+        t0, t1 = _a(format(w[2], "040x")), _a(format(w[3], "040x"))
+        pool = _a(call(factory, "getPool(address,address,uint24)", pad(t0) + pad(t1) + format(w[4], "064x")))
+        return factory, pool
+    raise ValueError("在 PancakeSwap 和 Uniswap 上都找不到这个 NFT（编号不存在或已销毁）")

@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>rwalp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+  :root { color-scheme:light dark; --bg:#f5f5f7; --card:#fff; --text:#1d1d1f; --dim:#6e6e73; --line:#d2d2d7; --blue:#0071e3; --err:#d70015; }
+  @media (prefers-color-scheme:dark) { :root { --bg:#000; --card:#1c1c1e; --text:#f5f5f7; --dim:#98989d; --line:#38383a; --blue:#0a84ff; --err:#ff453a; } }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; display:grid; place-items:center; background:var(--bg); color:var(--text);
+         font:15px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC",system-ui,sans-serif; -webkit-font-smoothing:antialiased; padding:20px; }
+  .card { width:100%; max-width:380px; background:var(--card); border-radius:22px; padding:36px 28px 28px; text-align:center;
+          box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 32px rgba(0,0,0,.06); }
+  .icon { width:56px; height:56px; margin:0 auto 18px; display:block; }
+  h1 { font-size:22px; font-weight:600; letter-spacing:-.02em; margin:0 0 6px; }
+  p { color:var(--dim); margin:0 0 24px; font-size:14px; }
+  input { width:100%; height:44px; border:1px solid var(--line); border-radius:12px; background:transparent; color:var(--text);
+          font:15px -apple-system,system-ui,sans-serif; padding:0 14px; margin-bottom:12px; }
+  input:focus { outline:none; border-color:var(--blue); box-shadow:0 0 0 3px color-mix(in srgb,var(--blue) 25%,transparent); }
+  button { width:100%; height:50px; border:0; border-radius:12px; background:var(--blue); color:#fff; font:600 17px -apple-system,system-ui,sans-serif;
+           cursor:pointer; transition:transform 160ms cubic-bezier(.23,1,.32,1), opacity 150ms ease; }
+  button:active:not(:disabled) { transform:scale(.97); }
+  button:disabled { opacity:.5; cursor:progress; }
+  .msg { min-height:20px; margin:14px 0 0; font-size:13px; color:var(--dim); }
+  .msg.err { color:var(--err); }
+  @media (prefers-reduced-motion:reduce) { button:active:not(:disabled) { transform:none; } }
+</style>
+</head>
+<body>
+<main class="card">
+  <svg class="icon" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#0c121b"/>
+    <g fill="#8ec9ff"><rect x="19" y="34" width="5" height="18" rx="1"/><rect x="27" y="20" width="5" height="32" rx="1"/><rect x="35" y="28" width="5" height="24" rx="1"/></g>
+    <rect x="31.5" y="10" width="2.5" height="44" rx="1.2" fill="#5fd3b5"/></svg>
+  <h1 id="title"></h1>
+  <p id="sub"></p>
+  <form id="f">
+    <input id="code" type="password" autocomplete="off" placeholder="设置码" hidden>
+    <button id="go" type="submit"></button>
+  </form>
+  <div class="msg" id="msg" role="status" aria-live="polite"></div>
+</main>
+<script>
+const MODE = "{{MODE}}";
+const $ = id => document.getElementById(id);
+const b64e = b => btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const b64d = s => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4)), c => c.charCodeAt(0));
+const post = async (u, body) => {
+  const r = await fetch(u, {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify(body || {}), credentials: "same-origin"});
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.detail || "请求失败");
+  return j;
+};
+const say = (t, bad) => { $("msg").textContent = t; $("msg").className = "msg" + (bad ? " err" : ""); };
+const setup = MODE === "setup", urlCode = new URLSearchParams(location.search).get("setup");
+$("title").textContent = setup ? "创建 Passkey" : "rwalp";
+$("sub").textContent = setup ? "这个站点只认第一把 Passkey。创建后，任何人都不能再注册。" : "使用你的 Passkey 登录";
+$("go").textContent = setup ? "创建 Passkey" : "使用 Passkey 登录";
+if (setup && !urlCode) $("code").hidden = false;
+if (urlCode) history.replaceState(null, "", location.pathname);
+if (!window.PublicKeyCredential) { say("这个浏览器不支持 Passkey", true); $("go").disabled = true; }
+
+$("f").onsubmit = async e => {
+  e.preventDefault(); $("go").disabled = true; say(setup ? "正在创建…" : "正在验证…");
+  try {
+    if (setup) {
+      const code = urlCode || $("code").value.trim();
+      const o = await post("/auth/register/options", {code});
+      const cred = await navigator.credentials.create({publicKey: {...o, challenge: b64d(o.challenge), user: {...o.user, id: b64d(o.user.id)}}});
+      await post("/auth/register", {code, id: cred.id, rawId: b64e(cred.rawId), type: cred.type,
+        response: {clientDataJSON: b64e(cred.response.clientDataJSON), attestationObject: b64e(cred.response.attestationObject)}});
+    } else {
+      const o = await post("/auth/login/options");
+      const cred = await navigator.credentials.get({publicKey: {...o, challenge: b64d(o.challenge),
+        allowCredentials: o.allowCredentials.map(c => ({...c, id: b64d(c.id)}))}});
+      await post("/auth/login", {id: cred.id, rawId: b64e(cred.rawId), type: cred.type, response: {
+        clientDataJSON: b64e(cred.response.clientDataJSON), authenticatorData: b64e(cred.response.authenticatorData),
+        signature: b64e(cred.response.signature), userHandle: cred.response.userHandle ? b64e(cred.response.userHandle) : null}});
+    }
+    say("完成"); location.href = "/";
+  } catch (err) {
+    say(err.name === "NotAllowedError" || err.name === "AbortError" ? "已取消" : err.name === "InvalidStateError" ? "这台设备上已有这个站点的 Passkey" : err.message || "失败", err.name !== "NotAllowedError");
+    $("go").disabled = false;
+  }
+};
+</script>
+</body>
+</html>

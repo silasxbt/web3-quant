@@ -1,4 +1,4 @@
-"""私有版：在公开版 rwalp 之上加分析预设、仓位台账、收益记录。部署在 IAP 之后，只允许 ALLOWED_EMAIL 访问。"""
+"""私有版：在公开版 rwalp 之上加分析预设、仓位台账、收益记录。整站只认一把 Passkey（见 passkey.py）。"""
 import os, time, pathlib
 from fastapi import FastAPI, HTTPException, Request, Body
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -6,19 +6,67 @@ from pydantic import BaseModel, Field
 import app.main as public
 from app import analytics
 from app.chain import cached, call, words
-from . import store, ledger, onchain
+from . import store, ledger, onchain, passkey
 
-ALLOWED = {e.strip().lower() for e in os.environ.get("ALLOWED_EMAIL", "").split(",") if e.strip()}
 HERE = pathlib.Path(__file__).parent
+AUTH_HTML = (HERE / "static/auth.html").read_text()
 app = FastAPI(title="rwalp private", docs_url=None, redoc_url=None, openapi_url=None)
+PUBLIC_PATHS = {"/health", "/favicon.svg", "/favicon.ico", "/setup",
+                "/auth/register/options", "/auth/register", "/auth/login/options", "/auth/login"}
+NO_STORE = {"Cache-Control": "no-store", "X-Frame-Options": "DENY", "Referrer-Policy": "no-referrer"}
+
+def auth_page(mode, status=200):
+    return HTMLResponse(AUTH_HTML.replace("{{MODE}}", mode), status, headers=NO_STORE)
 
 @app.middleware("http")
-async def only_owner(request: Request, call_next):
-    # IAP 注入 "accounts.google.com:you@x.com"；本地开发不设 ALLOWED_EMAIL 时放行
-    if ALLOWED and request.url.path not in ("/health",):
-        email = request.headers.get("x-goog-authenticated-user-email", "").split(":")[-1].lower()
-        if email not in ALLOWED: return JSONResponse({"detail": "forbidden"}, 403)
-    return await call_next(request)
+async def passkey_gate(request: Request, call_next):
+    path = request.url.path
+    if path in PUBLIC_PATHS:
+        resp = await call_next(request)
+    elif passkey.session_ok(request.cookies.get(passkey.COOKIE)):
+        resp = await call_next(request)
+    elif path == "/":
+        resp = auth_page("login" if store.get_cred() else "setup")
+    else:
+        resp = JSONResponse({"detail": "未登录"}, 401)
+    for k, v in NO_STORE.items(): resp.headers.setdefault(k, v)
+    return resp
+
+def _auth(fn):
+    try: return fn()
+    except passkey.AuthError as e: raise HTTPException(e.status, str(e))
+
+@app.get("/setup")
+def setup_page():
+    if store.get_cred(): raise HTTPException(403, "已注册")
+    return auth_page("setup")
+
+@app.post("/auth/register/options")
+def reg_options(body: dict = Body(default={})): return _auth(lambda: passkey.register_options(body.get("code")))
+
+@app.post("/auth/register")
+def reg(body: dict = Body(...)):
+    cid = _auth(lambda: passkey.register(body.get("code"), body))
+    return _session_response(cid)
+
+@app.post("/auth/login/options")
+def login_options(): return _auth(passkey.login_options)
+
+@app.post("/auth/login")
+def login(body: dict = Body(...)):
+    tok = _auth(lambda: passkey.login(body))
+    r = JSONResponse({"ok": True}); _set_cookie(r, tok); return r
+
+@app.post("/auth/logout")
+def logout():
+    r = JSONResponse({"ok": True}); r.delete_cookie(passkey.COOKIE, path="/"); return r
+
+def _set_cookie(r, tok):
+    r.set_cookie(passkey.COOKIE, tok, max_age=passkey.SESSION_TTL, path="/", httponly=True, secure=True, samesite="strict")
+
+def _session_response(cid):
+    tok = _auth(lambda: passkey.session_token(cid))
+    r = JSONResponse({"ok": True}); _set_cookie(r, tok); return r
 
 @app.get("/", response_class=HTMLResponse)
 def index():

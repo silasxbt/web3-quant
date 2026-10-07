@@ -58,3 +58,59 @@ def events(pid=None):
     return sorted(xs, key=lambda e: e.get("ts", 0))
 def add_event(data): return _put("p_events", data)
 def delete_event(eid): return _del("p_events", eid)
+
+# ---- Passkey：唯一凭证 + 一次性 challenge ----
+import threading
+_lock = threading.Lock()
+CRED = ("p_auth", "owner")
+
+def get_cred():
+    if MEM: return _mem.get("auth_cred")
+    d = db().collection(CRED[0]).document(CRED[1]).get()
+    return d.to_dict() if d.exists else None
+
+def create_cred(data):
+    """只可能成功一次：Firestore create() 在文档已存在时抛 AlreadyExists（等价 O_CREAT|O_EXCL）。"""
+    if MEM:
+        with _lock:
+            if "auth_cred" in _mem: raise FileExistsError
+            _mem["auth_cred"] = dict(data); return
+    from google.api_core.exceptions import AlreadyExists
+    try: db().collection(CRED[0]).document(CRED[1]).create(data)
+    except AlreadyExists: raise FileExistsError
+
+def update_counter(old, new):
+    """计数器只能前进：事务内比较旧值，防并发回退。"""
+    if MEM:
+        with _lock:
+            c = _mem["auth_cred"]
+            if c["sign_count"] != old: return False
+            c["sign_count"] = new; return True
+    from google.cloud import firestore
+    ref = db().collection(CRED[0]).document(CRED[1])
+    @firestore.transactional
+    def tx(t):
+        snap = ref.get(transaction=t)
+        if not snap.exists or snap.to_dict()["sign_count"] != old: return False
+        t.update(ref, {"sign_count": new}); return True
+    return tx(db().transaction())
+
+def put_challenge(ch, purpose):
+    rec = {"purpose": purpose, "ts": time.time()}
+    if MEM:
+        with _lock: _mem.setdefault("auth_ch", {})[ch] = rec
+        return
+    db().collection("p_auth_challenges").document(ch).set(rec)
+
+def take_challenge(ch):
+    """取出并删除（用后即焚）；不存在返回 None。"""
+    if MEM:
+        with _lock: return _mem.setdefault("auth_ch", {}).pop(ch, None)
+    from google.cloud import firestore
+    ref = db().collection("p_auth_challenges").document(ch)
+    @firestore.transactional
+    def tx(t):
+        snap = ref.get(transaction=t)
+        if not snap.exists: return None
+        t.delete(ref); return snap.to_dict()
+    return tx(db().transaction())

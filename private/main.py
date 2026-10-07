@@ -11,6 +11,8 @@ from . import store, ledger, onchain, passkey
 HERE = pathlib.Path(__file__).parent
 AUTH_HTML = (HERE / "static/auth.html").read_text()
 app = FastAPI(title="rwalp private", docs_url=None, redoc_url=None, openapi_url=None)
+# 仅本地开发：必须同时开启内存存储才生效，线上（Firestore）永远不会跳过登录
+DEV_NOAUTH = os.environ.get("RWALP_DEV_NOAUTH") == "1" and store.MEM
 PUBLIC_PATHS = {"/health", "/favicon.svg", "/favicon.ico", "/setup",
                 "/auth/register/options", "/auth/register", "/auth/login/options", "/auth/login"}
 NO_STORE = {"Cache-Control": "no-store", "X-Frame-Options": "DENY", "Referrer-Policy": "no-referrer"}
@@ -21,7 +23,7 @@ def auth_page(mode, status=200):
 @app.middleware("http")
 async def passkey_gate(request: Request, call_next):
     path = request.url.path
-    if path in PUBLIC_PATHS:
+    if DEV_NOAUTH or path in PUBLIC_PATHS:
         resp = await call_next(request)
     elif passkey.session_ok(request.cookies.get(passkey.COOKIE)):
         resp = await call_next(request)

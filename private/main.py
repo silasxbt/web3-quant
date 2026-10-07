@@ -230,19 +230,32 @@ def _ticker(info):
     sym = info["symbol0"] if info["stable_is_1"] else info["symbol1"]
     return sym.upper()
 
-def _import_one(tid, existing):
+def _pick(tid, owners):
+    """同号 NFT 在两个 DEX 上都存在时：只留有流动性、且是股票/稳定币池的；还有多个就优先已导入仓位的同一钱包。"""
+    cands = []
+    for factory, pool, liq, owner in onchain.locate(tid):
+        try: info = light_info(pool)
+        except Exception: continue
+        cands.append((info, liq, owner))
+    if not cands: raise ValueError("读取池子失败")
+    good = [c for c in cands if c[0]["stable"] in analytics.STABLES]
+    if not good: raise ValueError("只支持股票/USDT 或 股票/USDC 的池子")
+    live = [c for c in good if c[1]] or good
+    mine = [c for c in live if c[2] in owners] or live
+    if len(mine) > 1: raise ValueError("这个编号在 PancakeSwap 和 Uniswap 上都有有效仓位，无法判断是哪个，请先导入同钱包的其他仓位")
+    return mine[0][0]
+
+def _import_one(tid, existing, owners):
     if tid in existing: return {"token_id": tid, "ok": False, "error": "已经导入过"}
     try:
-        _, pool = onchain.locate(tid)
-        info = light_info(pool)
-        if info["stable"] not in analytics.STABLES: raise ValueError("只支持股票/USDT 或 股票/USDC 的池子")
+        info = _pick(tid, owners)
         n = onchain.read(info, tid)
     except Exception as e:
         return {"token_id": tid, "ok": False, "error": str(e)[:160]}
     if not n["liquidity"]: return {"token_id": tid, "ok": False, "error": "仓位流动性为 0（已撤池）"}
     now = time.time()
     pid = store.save_position({"name": f"{_ticker(info)} #{tid}", "pool": info["pool"], "lo": n["lo"], "hi": n["hi"],
-                               "token_id": tid, "opened": now, "status": "open", "note": "快捷导入"})
+                               "token_id": tid, "owner": n["owner"], "opened": now, "status": "open", "note": "快捷导入"})
     store.add_event({"position": pid, "type": "deposit", "ts": now, "stock": n["stock"], "stable": n["stable"],
                      "value": n["value"], "price": n["price"], "fees": 0, "cost": 0,
                      "note": "快捷导入：按导入时链上持仓作为本金基准，可删掉后补记真实投入"})
@@ -260,7 +273,8 @@ def quick_import(req: ImportReq):
         raise HTTPException(400, f"最多同时记录 {MAX_OPEN} 个仓位，当前已有 {active} 个，还能导入 {max(MAX_OPEN - active, 0)} 个")
     from concurrent.futures import ThreadPoolExecutor
     with ThreadPoolExecutor(5) as ex:
-        return list(ex.map(lambda t: _import_one(t, existing), ids))
+        owners = {p.get("owner") for p in ps if p.get("owner")}
+        return list(ex.map(lambda t: _import_one(t, existing, owners), ids))
 
 @app.get("/p/nft")
 def nft(pool: str, token_id: int):

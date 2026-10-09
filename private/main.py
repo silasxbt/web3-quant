@@ -256,14 +256,41 @@ def _import_one(tid, existing, owners):
     except Exception as e:
         return {"token_id": tid, "ok": False, "error": str(e)[:160]}
     if not n["liquidity"]: return {"token_id": tid, "ok": False, "error": "仓位流动性为 0（已撤池）"}
+    hist, err = _history(info, tid)
     now = time.time()
     pid = store.save_position({"name": f"{_ticker(info)} #{tid}", "pool": info["pool"], "lo": n["lo"], "hi": n["hi"],
-                               "token_id": tid, "owner": n["owner"], "opened": now, "status": "open", "note": "快捷导入"})
-    store.add_event({"position": pid, "type": "deposit", "ts": now, "stock": n["stock"], "stable": n["stable"],
-                     "value": n["value"], "price": n["price"], "fees": 0, "cost": 0, "fees_before": n["fees"],
-                     "note": "快捷导入：按导入时链上持仓作为本金基准，可删掉后补记真实投入"})
+                               "token_id": tid, "owner": n["owner"], "opened": hist["opened"] if hist else now, "status": "open",
+                               "note": "快捷导入" if hist else f"快捷导入（未取到开仓历史：{err}）"})
+    _write_history(pid, hist, n, now)
     return {"token_id": tid, "ok": True, "id": pid, "name": f"{_ticker(info)} #{tid}", "lo": n["lo"], "hi": n["hi"],
             "value": n["value"], "fees": n["fees"], "in_range": n["in_range"]}
+
+def _history(info, tid):
+    try: return onchain.history(info, tid), None
+    except Exception as e: return None, str(e)[:80]
+
+def _write_history(pid, hist, n, now):
+    """全周期口径：按链上开仓/加仓/减仓/领取写台账；取不到历史时退回「导入时持仓为本金、扣掉已有手续费」。"""
+    if hist:
+        for e in hist["events"]: store.add_event(dict(e, position=pid))
+    else:
+        store.add_event({"position": pid, "type": "deposit", "ts": now, "stock": n["stock"], "stable": n["stable"],
+                         "value": n["value"], "price": n["price"], "fees": 0, "cost": 0, "fees_before": n["fees"],
+                         "note": "快捷导入：按导入时链上持仓作为本金基准"})
+
+@app.post("/p/positions/{pid}/rebuild")
+def rebuild(pid: str):
+    """从链上重建这个仓位的全周期台账（替换掉链上可得的记录，保留手动记的成本和备注类记录）。"""
+    pos = store.get_position(pid)
+    if not pos or not pos.get("token_id"): raise HTTPException(400, "这个仓位没有 NFT 编号")
+    info = light_info(pos["pool"])
+    hist, err = _history(info, pos["token_id"])
+    if not hist: raise HTTPException(502, f"读取开仓历史失败：{err}")
+    for e in store.events(pid):
+        if e["type"] in ("deposit", "withdraw", "collect"): store.delete_event(e["id"])
+    _write_history(pid, hist, None, time.time())
+    store.save_position({"opened": hist["opened"], "note": (pos.get("note") or "").split("（未取到")[0]}, pid)
+    return {"opened": hist["opened"], "events": len(hist["events"])}
 
 @app.post("/p/import")
 def quick_import(req: ImportReq):

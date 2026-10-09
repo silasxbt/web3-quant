@@ -6,11 +6,18 @@
   collect   领取手续费：fees = 美元价值
   cost      成本：cost = gas、swap 费等
   snapshot  记录当前状态：value = 仓位当前价值，fees = 未领取手续费
+
+投入事件可带 fees_before：开始记账时仓位里已经存在的未领取手续费（快捷导入时自动记录）。
+这部分是记账前赚的，后面领取或快照时会被一起算进来，所以要扣掉，不计入收益和年化。
+
+两个年化（都按资金加权平均本金、从首笔投入到现在的时长折算成年）：
+  实际年化   = (当前价值 + 已提取 + 记账后手续费 − 投入 − 成本)  → 含标的价格波动（含无常损失）和手续费
+  手续费年化 = 记账后手续费                                       → 只算手续费
 """
 import time
 
 def summarize(pos, evs, price=None):
-    dep = wd = fees_c = cost = 0.0
+    dep = wd = fees_c = cost = fees_before = 0.0
     stock = stable = 0.0      # 持币基准：投入的股票和稳定币，扣掉提取的部分
     last_snap = None
     t0 = min([pos.get("opened") or time.time()] + [e["ts"] for e in evs if e["type"] == "deposit"])
@@ -19,7 +26,7 @@ def summarize(pos, evs, price=None):
         cap_time += cap * max(e["ts"] - tprev, 0); tprev = e["ts"]
         t = e["type"]
         if t == "deposit":
-            dep += e.get("value", 0); cap += e.get("value", 0)
+            dep += e.get("value", 0); cap += e.get("value", 0); fees_before += e.get("fees_before", 0)
             stock += e.get("stock", 0); stable += e.get("stable", 0)
         elif t == "withdraw":
             wd += e.get("value", 0); cap = max(cap - e.get("value", 0), 0)
@@ -32,8 +39,8 @@ def summarize(pos, evs, price=None):
     cap_time += cap * max(now - tprev, 0)
     value = 0.0 if closed else (last_snap or {}).get("value")
     unclaimed = 0.0 if closed else (last_snap or {}).get("fees", 0)
-    fees = fees_c + (unclaimed or 0)
-    out = dict(deposited=dep, withdrawn=wd, fees_collected=fees_c, fees_unclaimed=unclaimed or 0, fees=fees, cost=cost,
+    fees = max(fees_c + (unclaimed or 0) - fees_before, 0)
+    out = dict(deposited=dep, withdrawn=wd, fees_collected=fees_c, fees_unclaimed=unclaimed or 0, fees_before=fees_before, fees=fees, cost=cost,
                value=value, snapshot_at=(last_snap or {}).get("ts"), days=max((now - t0) / 86400, 0))
     avg_cap = cap_time / max(now - t0, 1)
     if value is not None:

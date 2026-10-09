@@ -125,6 +125,7 @@ class PositionPatch(BaseModel):
     status: str | None = Field(None, pattern="^(open|closed)$")
 
 class Event(BaseModel):
+    fees_before: float = Field(0, ge=0)
     type: str = Field(pattern="^(deposit|withdraw|collect|cost|snapshot)$")
     ts: float | None = None
     value: float = Field(0, ge=0)
@@ -259,7 +260,7 @@ def _import_one(tid, existing, owners):
     pid = store.save_position({"name": f"{_ticker(info)} #{tid}", "pool": info["pool"], "lo": n["lo"], "hi": n["hi"],
                                "token_id": tid, "owner": n["owner"], "opened": now, "status": "open", "note": "快捷导入"})
     store.add_event({"position": pid, "type": "deposit", "ts": now, "stock": n["stock"], "stable": n["stable"],
-                     "value": n["value"], "price": n["price"], "fees": 0, "cost": 0,
+                     "value": n["value"], "price": n["price"], "fees": 0, "cost": 0, "fees_before": n["fees"],
                      "note": "快捷导入：按导入时链上持仓作为本金基准，可删掉后补记真实投入"})
     return {"token_id": tid, "ok": True, "id": pid, "name": f"{_ticker(info)} #{tid}", "lo": n["lo"], "hi": n["hi"],
             "value": n["value"], "fees": n["fees"], "in_range": n["in_range"]}

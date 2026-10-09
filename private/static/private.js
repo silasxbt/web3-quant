@@ -154,10 +154,10 @@ function drawPos(r) {
     <dl class="pv-kpi">
       <div><dt>投入</dt><dd>${usd(s.deposited)}</dd></div>
       <div><dt>当前价值</dt><dd>${num(s.value)}</dd></div>
-      <div><dt>手续费</dt><dd>${usd(s.fees)}${s.fees_unclaimed ? `<small class="dim"> 未领 ${usd(s.fees_unclaimed)}</small>` : ""}</dd></div>
+      <div><dt>手续费 <span class="dim">· 记账后</span></dt><dd>${usd(s.fees)}${s.fees_before ? `<small class="dim" title="导入时仓位里已有的未领手续费，不计入收益"> 另有导入前 ${usd(s.fees_before)}</small>` : ""}</dd></div>
       <div><dt>盈亏</dt><dd>${sg(s.pnl)}</dd></div>
-      <div><dt>实际年化</dt><dd>${sp(s.apr)}</dd></div>
-      <div><dt>手续费年化</dt><dd>${s.fee_apr == null ? "—" : pct(s.fee_apr, 0)}</dd></div>
+      <div><dt title="(当前价值 + 已提取 + 手续费 − 投入 − 成本)，含标的涨跌和无常损失">实际年化</dt><dd>${sp(s.apr)}</dd></div>
+      <div><dt title="只算记账后赚到的手续费">手续费年化</dt><dd>${s.fee_apr == null ? "—" : pct(s.fee_apr, 0)}</dd></div>
       <div><dt>相对持币</dt><dd>${sg(s.vs_hodl)}</dd></div>
       <div><dt>时长</dt><dd>${s.days.toFixed(1)} 天</dd></div>
     </dl>

@@ -10,6 +10,12 @@ const num = v => v == null || isNaN(v) ? "—" : usd(v);
 const sg = v => v == null ? "—" : `<span class="${v >= 0 ? "pos" : "neg"}">${signed(v, usd)}</span>`;
 const sp = v => v == null ? "—" : `<span class="${v >= 0 ? "pos" : "neg"}">${signed(v, x => pct(x, 0))}</span>`;
 const ago = t => { const d = (Date.now() / 1000 - t) / 86400; return d < 1 ? `${Math.max(1, Math.round(d * 24))} 小时` : `${d.toFixed(d < 10 ? 1 : 0)} 天`; };
+/* 股票/BNB 仓位：价格按 BNB，金额同时显示 U 和 BNB */
+const bnbPos = r => r.quote_sym === "BNB";
+const pq = (v, r) => bnbPos(r) ? (+v).toPrecision(5) + " BNB" : usd(v);
+const bn = v => v == null || isNaN(v) ? "—" : (+v).toFixed(4) + " BNB";
+const sbn = v => v == null ? "" : `<span class="${v >= 0 ? "pos" : "neg"}">${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(4)} BNB</span>`;
+const dual = (r, main, q) => bnbPos(r) && r.summary_q ? `${main}<small class="pv-q">${q}</small>` : main;
 const tickerOf = pool => Object.entries(POOLS).find(([, a]) => a === pool)?.[0];
 const form = () => ({pool: $("pool").value.trim(), lo: +$("lo").value || null, hi: +$("hi").value || null,
   capital: +$("cap").value || 1000, ranges: $("ranges").value, shift: +$("shift").value || 0.5,
@@ -97,8 +103,8 @@ function drawList() {
   $("pv-list").innerHTML = vis.map(r => { const s = r.summary, p = r.live?.price;
     const st = r.status === "closed" ? "closed" : p == null ? "err" : r.in_range ? "in" : "out";
     return `<button type="button" class="pv-card" data-id="${r.id}" aria-pressed="${r.id === sel}">
-      <span class="pv-card-name"><span class="dot pv-st-${st}"></span>${esc(r.name)}</span><b>${num(s.value)}</b>
-      <span class="dim">${usd(r.lo)} – ${usd(r.hi)}</span><span>${sg(s.pnl)}</span></button>`; }).join("");
+      <span class="pv-card-name"><span class="dot pv-st-${st}"></span>${esc(r.name)}</span><b>${num(s.value)}${bnbPos(r) && r.summary_q ? ` <small class="dim">${bn(r.summary_q.value)}</small>` : ""}</b>
+      <span class="dim">${pq(r.lo, r)} – ${pq(r.hi, r)}</span><span>${sg(s.pnl)}${bnbPos(r) && r.summary_q ? ` ${sbn(r.summary_q.pnl)}` : ""}</span></button>`; }).join("");
 }
 async function loadPositions() {
   try {
@@ -137,31 +143,31 @@ function select(id, reanalyze) {
   const r = rows.find(x => x.id === id); if (!r) return;
   sel = id; localStorage.setItem("rwalp.sel", id); drawList();
   if (reanalyze && mode === "track") {
-    $("pool").value = r.pool; $("lo").value = +r.lo.toFixed(4); $("hi").value = +r.hi.toFixed(4);
+    $("pool").value = r.pool; $("lo").value = +(+r.lo).toPrecision(6); $("hi").value = +(+r.hi).toPrecision(6);
     $("cap").value = Math.max(1, Math.round(r.summary.value || r.summary.deposited || 1000));
     syncTickers(); check();
   }
   drawPos(r);
 }
 function drawPos(r) {
-  const s = r.summary, box = $("pv-pos"); box.dataset.id = r.id;
+  const s = r.summary, Q = r.summary_q || {}, box = $("pv-pos"); box.dataset.id = r.id;
   const src = r.live?.nft ? `链上实时（NFT #${r.token_id}）` : s.snapshot_at ? `最近记录 ${ago(s.snapshot_at)}前` : "还没有价值记录";
   box.innerHTML = `<div class="pv-pos-head"><h2>${esc(r.name)}</h2>
-      <span class="dim">${usd(r.lo)} – ${usd(r.hi)} · ${src}${r.status === "closed" ? " · 已平仓" : ""}</span>
+      <span class="dim">${pq(r.lo, r)} – ${pq(r.hi, r)}${bnbPos(r) ? ` · BNB ${usd(r.qusd)}` : ""} · ${src}${r.status === "closed" ? " · 已平仓" : ""}</span>
       <span class="pv-actions">${r.token_id && r.status !== "closed" ? `<button type="button" class="pv-btn" data-a="sync">同步链上</button>` : ""}
         <button type="button" class="pv-btn" data-a="bt">回测这个区间</button>
         <button type="button" class="pv-btn" data-a="log" aria-expanded="false">记录与设置</button></span></div>
     <dl class="pv-kpi">
-      <div><dt>投入</dt><dd>${usd(s.deposited)}</dd></div>
-      <div><dt>当前价值</dt><dd>${num(s.value)}</dd></div>
-      <div><dt>手续费 <span class="dim">· 记账后</span></dt><dd>${usd(s.fees)}${s.fees_before ? `<small class="dim" title="导入时仓位里已有的未领手续费，不计入收益"> 另有导入前 ${usd(s.fees_before)}</small>` : ""}</dd></div>
-      <div><dt>盈亏</dt><dd>${sg(s.pnl)}</dd></div>
-      <div><dt title="(当前价值 + 已提取 + 手续费 − 投入 − 成本)，含标的涨跌和无常损失">实际年化</dt><dd>${sp(s.apr)}</dd></div>
+      <div><dt>投入</dt><dd>${dual(r, usd(s.deposited), bn(Q.deposited))}</dd></div>
+      <div><dt>当前价值</dt><dd>${dual(r, num(s.value), bn(Q.value))}</dd></div>
+      <div><dt>手续费 <span class="dim">· 记账后</span></dt><dd>${dual(r, usd(s.fees), bn(Q.fees))}${s.fees_before ? `<small class="dim" title="导入时仓位里已有的未领手续费，不计入收益"> 另有导入前 ${usd(s.fees_before)}</small>` : ""}</dd></div>
+      <div><dt>盈亏</dt><dd>${dual(r, sg(s.pnl), sbn(Q.pnl))}</dd></div>
+      <div><dt title="(当前价值 + 已提取 + 手续费 − 投入 − 成本)，含标的涨跌和无常损失">实际年化</dt><dd>${dual(r, sp(s.apr), "BNB 本位 " + sp(Q.apr))}</dd></div>
       <div><dt title="只算记账后赚到的手续费">手续费年化</dt><dd>${s.fee_apr == null ? "—" : pct(s.fee_apr, 0)}</dd></div>
-      <div><dt>相对持币</dt><dd>${sg(s.vs_hodl)}</dd></div>
+      <div><dt>相对持币</dt><dd>${dual(r, sg(s.vs_hodl), sbn(Q.vs_hodl))}</dd></div>
       <div><dt>时长</dt><dd>${s.days.toFixed(1)} 天</dd></div>
     </dl>
-    <p class="note">下方的深度图、区间评级、收益口径和调仓成本，都按这个仓位的实际区间和当前价值 ${num(s.value ?? s.deposited)} 计算。${s.days < 1 ? "持有不足 1 天，暂不显示年化。" : ""}</p>
+    <p class="note">${bnbPos(r) ? "股票/BNB 仓位：上面每格第一行是 U 本位，第二行是 BNB 本位（BNB 涨跌不算盈亏）。" : ""}下方的深度图、区间评级、收益口径和调仓成本，都按这个仓位的实际区间和当前价值 ${num(s.value ?? s.deposited)} 计算。${s.days < 1 ? "持有不足 1 天，暂不显示年化。" : ""}</p>
     <div id="pv-log" hidden></div>`;
 }
 $("pv-pos").addEventListener("click", async e => {
@@ -187,7 +193,7 @@ async function drawLog(r) {
   L.innerHTML = `<div class="pv-detail-grid">
     <form id="pv-ev" class="pv-form">
       <select name="type">${Object.entries(TYPES).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select>
-      <input name="stock" type="number" step="any" placeholder="股票数量"><input name="stable" type="number" step="any" placeholder="稳定币">
+      <input name="stock" type="number" step="any" placeholder="股票数量"><input name="stable" type="number" step="any" placeholder="${bnbPos(r) ? "BNB 数量" : "稳定币"}">
       <input name="value" type="number" step="any" placeholder="总价值 $"><input name="fees" type="number" step="any" placeholder="手续费 $">
       <input name="cost" type="number" step="any" placeholder="成本 $"><input name="ts" type="datetime-local" value="${now}">
       <input name="note" type="text" placeholder="备注" maxlength="300"><button type="submit" class="pv-btn pv-primary">记一笔</button>

@@ -141,13 +141,14 @@ def light_info(pool):
     pool = pool.lower()
     s = cached(("static", pool), 86400, lambda: analytics._static(pool))
     P = (words(call(pool, "slot0()"))[0] / 2**96) ** 2 * 10 ** (s["d0"] - s["d1"])
-    return dict(s, price=P if s["stable_is_1"] else 1 / P)
+    s.setdefault("quote_sym", analytics.QUOTES.get(s["stable"])); s.setdefault("quote_kind", "bnb" if s["stable"] == analytics.WBNB else "usd")
+    return dict(s, price=P if s["stable_is_1"] else 1 / P, qusd=analytics.quote_usd(s["stable"]))
 
 def _live(pos):
     """读池子价格；有 NFT 编号时读链上实时价值和未领取手续费。"""
     out = {"price": None, "nft": None, "error": None}
     try:
-        i = light_info(pos["pool"]); out["price"] = i["price"]
+        i = light_info(pos["pool"]); out["price"] = i["price"]; out["qusd"] = i["qusd"]; out["quote_sym"] = i["quote_sym"]
         if pos.get("token_id"): out["nft"] = onchain.read(i, pos["token_id"])
     except Exception as e:
         out["error"] = str(e)[:160]
@@ -157,11 +158,15 @@ def _view(pos, evs):
     live = _live(pos) if pos.get("status") != "closed" else {"price": None, "nft": None, "error": None}
     nft = live.get("nft")
     if nft:  # 链上实时数据视为最新快照
-        evs = evs + [{"type": "snapshot", "ts": time.time(), "value": nft["value"], "fees": nft["fees"]}]
-    s = ledger.summarize(pos, evs, live.get("price"))
+        evs = evs + [{"type": "snapshot", "ts": time.time(), "value": nft["value"], "fees": nft["fees"],
+                      "value_q": nft["value_q"], "fees_q": nft["fees_q"], "qusd": nft["qusd"]}]
+    q = live.get("qusd") or pos.get("qusd") or 1.0
+    s = ledger.summarize(pos, evs, live.get("price"), q, "usd")
+    sym = live.get("quote_sym") or pos.get("quote_sym") or "USDT"
+    sq = ledger.summarize(pos, evs, live.get("price"), q, "q") if sym == "BNB" else None
     p = live.get("price")
     in_range = (pos["lo"] <= p <= pos["hi"]) if p else None
-    return dict(pos, live=live, summary=s, in_range=in_range, events=len(evs) - (1 if nft else 0))
+    return dict(pos, live=live, summary=s, summary_q=sq, quote_sym=sym, qusd=q, in_range=in_range, events=len(evs) - (1 if nft else 0))
 
 @app.get("/p/positions")
 def list_positions():
@@ -178,6 +183,8 @@ def create_position(p: Position):
         raise HTTPException(400, f"最多同时记录 {MAX_OPEN} 个仓位，先平仓或删除一个")
     d = p.model_dump(); d["opened"] = d["opened"] or time.time(); d["status"] = "open"
     d["pool"] = d["pool"].lower(); d["lo"], d["hi"] = sorted((d["lo"], d["hi"]))
+    try: d["quote_sym"] = light_info(d["pool"])["quote_sym"]
+    except Exception: pass
     return {"id": store.save_position(d)}
 
 @app.patch("/p/positions/{pid}")
@@ -201,10 +208,18 @@ def add_event(pid: str, e: Event):
     pos = store.get_position(pid)
     if not pos: raise HTTPException(404, "仓位不存在")
     d = e.model_dump(); d["position"] = pid; d["ts"] = d["ts"] or time.time()
-    if d["type"] in ("deposit", "withdraw") and not d["value"]:
-        if not d["price"]: d["price"] = _live(pos)["price"]
-        if not d["price"]: raise HTTPException(400, "取不到价格，请手动填写总价值")
-        d["value"] = d["stock"] * d["price"] + d["stable"]
+    live = _live(pos); q = live.get("qusd") or 1.0
+    d["qusd"] = q
+    if d["type"] in ("deposit", "withdraw"):
+        if not d["value"]:   # 按数量算：stable 是计价币数量（股票/BNB 池即 BNB）
+            if not d["price"]: d["price"] = live["price"]
+            if not d["price"]: raise HTTPException(400, "取不到价格，请手动填写总价值")
+            d["value_q"] = d["stock"] * d["price"] + d["stable"]; d["value"] = d["value_q"] * q
+        else:                # 手填总价值按美元
+            d["value_q"] = d["value"] / q
+    for k in ("fees", "cost", "fees_before"):
+        d[k + "_q"] = d.get(k, 0) / q
+    if d["type"] == "snapshot": d["value_q"] = d["value"] / q
     return {"id": store.add_event(d)}
 
 @app.post("/p/positions/{pid}/sync")
@@ -216,6 +231,7 @@ def sync_snapshot(pid: str):
     if not live.get("nft"): raise HTTPException(502, live.get("error") or "读取链上仓位失败")
     n = live["nft"]
     store.add_event({"position": pid, "type": "snapshot", "ts": time.time(), "value": n["value"], "fees": n["fees"],
+                     "value_q": n["value_q"], "fees_q": n["fees_q"], "qusd": n["qusd"],
                      "stock": n["stock"], "stable": n["stable"], "price": n["price"], "note": "链上同步"})
     return n
 
@@ -241,7 +257,7 @@ def _pick(tid, owners):
         except Exception: continue
         cands.append((info, liq, owner))
     if not cands: raise ValueError("读取池子失败")
-    good = [c for c in cands if c[0]["stable"] in analytics.STABLES]
+    good = [c for c in cands if c[0]["stable"] in analytics.QUOTES and c[0]["stock"] not in analytics.QUOTES]
     if not good: raise ValueError("只支持股票/USDT 或 股票/USDC 的池子")
     live = [c for c in good if c[1]] or good
     mine = [c for c in live if c[2] in owners] or live
@@ -258,12 +274,13 @@ def _import_one(tid, existing, owners):
     if not n["liquidity"]: return {"token_id": tid, "ok": False, "error": "仓位流动性为 0（已撤池）"}
     hist, err = _history(info, tid)
     now = time.time()
-    pid = store.save_position({"name": f"{_ticker(info)} #{tid}", "pool": info["pool"], "lo": n["lo"], "hi": n["hi"],
+    nm = f"{_ticker(info)}{'/BNB' if info['quote_kind'] == 'bnb' else ''} #{tid}"
+    pid = store.save_position({"name": nm, "pool": info["pool"], "lo": n["lo"], "hi": n["hi"], "quote_sym": info["quote_sym"],
                                "token_id": tid, "owner": n["owner"], "opened": hist["opened"] if hist else now, "status": "open",
                                "note": "快捷导入" if hist else f"快捷导入（未取到开仓历史：{err}）"})
     _write_history(pid, hist, n, now)
-    return {"token_id": tid, "ok": True, "id": pid, "name": f"{_ticker(info)} #{tid}", "lo": n["lo"], "hi": n["hi"],
-            "value": n["value"], "fees": n["fees"], "in_range": n["in_range"]}
+    return {"token_id": tid, "ok": True, "id": pid, "name": nm, "lo": n["lo"], "hi": n["hi"],
+            "value": n["value"], "fees": n["fees"], "value_q": n["value_q"], "quote_sym": n["quote_sym"], "in_range": n["in_range"]}
 
 def _history(info, tid):
     try: return onchain.history(info, tid), None
@@ -275,7 +292,8 @@ def _write_history(pid, hist, n, now):
         for e in hist["events"]: store.add_event(dict(e, position=pid))
     else:
         store.add_event({"position": pid, "type": "deposit", "ts": now, "stock": n["stock"], "stable": n["stable"],
-                         "value": n["value"], "price": n["price"], "fees": 0, "cost": 0, "fees_before": n["fees"],
+                         "value": n["value"], "value_q": n["value_q"], "qusd": n["qusd"], "price": n["price"], "fees": 0, "cost": 0,
+                         "fees_before": n["fees"], "fees_before_q": n["fees_q"],
                          "note": "快捷导入：按导入时链上持仓作为本金基准"})
 
 @app.post("/p/positions/{pid}/rebuild")
@@ -338,8 +356,8 @@ def add_ticker(t: TickerReq):
     try: info = light_info(pool)
     except Exception: raise HTTPException(400, "读不到这个池子：请确认是 BSC 上 PancakeSwap / Uniswap V3 官方池的地址")
     if not info.get("dex"): raise HTTPException(400, "不是 PancakeSwap / Uniswap V3 官方 factory 创建的池子")
-    if info["stable"] not in analytics.STABLES or info["stock"] in analytics.STABLES:
-        raise HTTPException(400, "只支持股票/USDT 或 股票/USDC 的池子")
+    if info["stable"] not in analytics.QUOTES or info["stock"] in analytics.QUOTES:
+        raise HTTPException(400, "只支持股票/USDT、股票/USDC 或 股票/BNB 的池子")
     sym = (t.symbol or _ticker(info)).strip().upper()[:12]
     tid = store.add_ticker({"symbol": sym, "pool": pool, "order": max([x.get("order", 0) for x in ts] + [-1]) + 1,
                             "dex": info["dex"], "fee": info["fee"], "bstocks": info["bstocks"]})

@@ -73,3 +73,5 @@ body[data-mode="track"] #out > .empty { display:none; }
 .tk-add { display:grid; grid-template-columns:1fr; gap:4px; margin:-4px 0 6px; animation:enter 200ms var(--ease-out) both; }
 .tk-add[hidden] { display:none; }
 #tk-msg:empty { display:none; }
+.pv-q { display:block; font:11px var(--mono); color:var(--dim); margin-top:1px; }
+.pv-card small { font:11px var(--mono); }

@@ -39,8 +39,11 @@ def read(pool_info, token_id):
         else:
             stock, stable, fs, fst = a1, a0, f1, f0
             dd = 10 ** (pool_info["d0"] - pool_info["d1"]); lo, hi = 1 / (1.0001 ** tu * dd), 1 / (1.0001 ** tl * dd)
+        q = pool_info.get("qusd", 1.0)
+        vq, fq = stock * p + stable, fs * p + fst
         return dict(token_id=int(token_id), owner=owner, liquidity=L, lo=lo, hi=hi, in_range=lo <= p <= hi,
-                    stock=stock, stable=stable, value=stock * p + stable, fees=fs * p + fst, price=p)
+                    stock=stock, stable=stable, value=vq * q, fees=fq * q, value_q=vq, fees_q=fq, qusd=q,
+                    quote_sym=pool_info.get("quote_sym", "USD"), price=p)
     return cached(("nft", pool_info["pool"], int(token_id)), 30, f)
 
 def locate(token_id):
@@ -121,26 +124,34 @@ def history(pool_info, token_id, lookback_days=60):
             P = (words(arpc("eth_call", [{"to": pool_info["pool"], "data": sel("slot0()")}, hex(b)]))[0] / 2**96) ** 2 * 10 ** (pool_info["d0"] - pool_info["d1"])
             px_cache[b] = P if pool_info["stable_is_1"] else 1 / P
         return px_cache[b]
+    from app.analytics import CHAINLINK_BNB
+    bnb_q = pool_info.get("quote_kind") == "bnb"
+    q_cache = {}
+    def qusd(b):            # 该区块时计价币的美元价（BNB 用 Chainlink 历史值）
+        if not bnb_q: return 1.0
+        if b not in q_cache: q_cache[b] = int(arpc("eth_call", [{"to": CHAINLINK_BNB, "data": sel("latestAnswer()")}, hex(b)]), 16) / 1e8
+        return q_cache[b]
     d0, d1 = 10 ** pool_info["d0"], 10 ** pool_info["d1"]
     split = lambda a0, a1: (a0 / d0, a1 / d1) if pool_info["stable_is_1"] else (a1 / d1, a0 / d0)  # (股票, 稳定币)
     owed_stock = owed_stable = 0.0                  # 减仓后还没领走的本金
     events = []
     for l in logs:
         b = int(l["blockNumber"], 16); data = l["data"][2:]; kind = next(n for n, t in EV.items() if t == l["topics"][0])
-        p = price(b); t = ts(b)
+        p = price(b); t = ts(b); q = qusd(b)
         if kind in ("inc", "dec"):
             st, sb = split(int(data[64:128], 16), int(data[128:192], 16))
             if kind == "inc":
-                events.append({"type": "deposit", "ts": t, "stock": st, "stable": sb, "value": st * p + sb, "price": p, "block": b,
-                               "note": "链上加仓" if events else "链上开仓"})
+                events.append({"type": "deposit", "ts": t, "stock": st, "stable": sb, "value_q": st * p + sb, "value": (st * p + sb) * q,
+                               "qusd": q, "price": p, "block": b, "note": "链上加仓" if events else "链上开仓"})
             else:
                 owed_stock += st; owed_stable += sb
-                events.append({"type": "withdraw", "ts": t, "stock": st, "stable": sb, "value": st * p + sb, "price": p, "block": b, "note": "链上减仓"})
+                events.append({"type": "withdraw", "ts": t, "stock": st, "stable": sb, "value_q": st * p + sb, "value": (st * p + sb) * q,
+                               "qusd": q, "price": p, "block": b, "note": "链上减仓"})
         else:
             st, sb = split(int(data[64:128], 16), int(data[128:192], 16))
             fs, fb = max(st - owed_stock, 0), max(sb - owed_stable, 0)
             owed_stock, owed_stable = max(owed_stock - st, 0), max(owed_stable - sb, 0)
             fee = fs * p + fb
-            if fee > 1e-9: events.append({"type": "collect", "ts": t, "fees": fee, "price": p, "block": b, "note": "链上领取手续费"})
+            if fee > 1e-9: events.append({"type": "collect", "ts": t, "fees_q": fee, "fees": fee * q, "qusd": q, "price": p, "block": b, "note": "链上领取手续费"})
     if not events or events[0]["type"] != "deposit": raise ValueError("没有找到开仓记录")
     return {"mint_block": mint, "opened": events[0]["ts"], "events": events}

@@ -306,6 +306,51 @@ def quick_import(req: ImportReq):
         owners = {p.get("owner") for p in ps if p.get("owner")}
         return list(ex.map(lambda t: _import_one(t, existing, owners), ids))
 
+# ---------- 自选标的 ----------
+MAX_TICKERS = 10
+DEFAULT_TICKERS = {
+    "QQQB": "0xfc4e77248b76fefc27c4cac7151a2ee5b5cc590e", "AAPLB": "0xe9b9998b2ec5430d2246c7f1f8d9f298c97d7365",
+    "GOOGLB": "0x89001d846f7ca36ee089f73eefc25657e1798144", "NVDAB": "0x8fb4243b553ac29ba088acf00b9b7da24bd6690c",
+    "BABAB": "0xfd95cb1391999006eb91797a7c62acfe88b20292", "PDDB": "0xd0c2a4dc7c581db2660286660b703cf6883f29ba",
+    "MSTRB": "0x692081209619735f25700557078ab084d3e5d007", "MSFTB": "0x5018b018ceb7645c927c5cf246786f89ebcbe7ea",
+    "METAB": "0xc2151a561e928d16576d75ea88544543ac63d80b"}
+
+def _seed_tickers():
+    ts = store.tickers()
+    if ts or store.get_state_flag("tickers_seeded"): return ts
+    for n, (sym, pool) in enumerate(DEFAULT_TICKERS.items()):
+        store.add_ticker({"symbol": sym, "pool": pool, "order": n})
+    store.set_state_flag("tickers_seeded")
+    return store.tickers()
+
+class TickerReq(BaseModel):
+    pool: str = Field(pattern="^0x[0-9a-fA-F]{40}$")
+    symbol: str | None = Field(None, max_length=12)
+
+@app.get("/p/tickers")
+def list_tickers(): return _seed_tickers()
+
+@app.post("/p/tickers")
+def add_ticker(t: TickerReq):
+    ts = _seed_tickers(); pool = t.pool.lower()
+    if any(x["pool"] == pool for x in ts): raise HTTPException(400, "这个池子已经在列表里")
+    if len(ts) >= MAX_TICKERS: raise HTTPException(400, f"最多 {MAX_TICKERS} 个，先删掉一个")
+    try: info = light_info(pool)
+    except Exception: raise HTTPException(400, "读不到这个池子：请确认是 BSC 上 PancakeSwap / Uniswap V3 官方池的地址")
+    if not info.get("dex"): raise HTTPException(400, "不是 PancakeSwap / Uniswap V3 官方 factory 创建的池子")
+    if info["stable"] not in analytics.STABLES or info["stock"] in analytics.STABLES:
+        raise HTTPException(400, "只支持股票/USDT 或 股票/USDC 的池子")
+    sym = (t.symbol or _ticker(info)).strip().upper()[:12]
+    tid = store.add_ticker({"symbol": sym, "pool": pool, "order": max([x.get("order", 0) for x in ts] + [-1]) + 1,
+                            "dex": info["dex"], "fee": info["fee"], "bstocks": info["bstocks"]})
+    return {"id": tid, "symbol": sym, "pool": pool, "dex": info["dex"], "fee": info["fee"], "bstocks": info["bstocks"]}
+
+@app.delete("/p/tickers/{tid}")
+def remove_ticker(tid: str):
+    _seed_tickers()
+    if not store.delete_ticker(tid): raise HTTPException(404, "不存在")
+    return {"ok": True}
+
 @app.get("/p/nft")
 def nft(pool: str, token_id: int):
     try: return onchain.read(light_info(pool), token_id)

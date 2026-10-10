@@ -230,7 +230,49 @@ async function drawLog(r) {
     await req("DELETE", `/p/positions/${r.id}`); sel = null; localStorage.removeItem("rwalp.sel"); $("pv-pos").innerHTML = ""; delete $("pv-pos").dataset.id; loadPositions(); };
 }
 
+/* ---------- 自选标的：替换公开版写死的快捷按钮 ---------- */
+let tks = [];
+const tkBox = $("tickers");
+tkBox.insertAdjacentHTML("afterend", `<form id="tk-add" class="tk-add" hidden>
+  <input id="tk-pool" type="text" spellcheck="false" autocomplete="off" placeholder="池子合约地址 0x…" aria-label="池子合约地址">
+  <input id="tk-sym" type="text" maxlength="12" placeholder="名称（可选）" aria-label="名称">
+  <button type="submit" class="pv-btn pv-primary" id="tk-go">添加</button></form><p class="hint" id="tk-msg"></p>`);
+function drawTickers() {
+  for (const k of Object.keys(POOLS)) delete POOLS[k];
+  tks.forEach(t => POOLS[t.symbol] = t.pool);
+  tkBox.innerHTML = tks.map(t => `<span class="tk"><button type="button" data-a="${t.pool}" title="${esc(t.pool)}">${esc(t.symbol)}</button>`
+    + `<button type="button" class="tk-x" data-rm="${t.id}" aria-label="移除 ${esc(t.symbol)}">×</button></span>`).join("")
+    + (tks.length < 10 ? `<button type="button" class="tk-plus" id="tk-plus" aria-expanded="${!$("tk-add").hidden}" title="按池子地址添加">＋</button>` : "")
+    + `<span class="tk-count">${tks.length}/10</span>`;
+  syncTickers();
+}
+const tkMsg = (t, bad) => { $("tk-msg").textContent = t; $("tk-msg").className = "hint" + (bad ? " err" : ""); };
+async function loadTickers() { try { tks = await req("GET", "/p/tickers"); drawTickers(); } catch (e) { tkMsg(e.message, true); } }
+tkBox.addEventListener("click", async e => {
+  const rm = e.target.closest("[data-rm]"), plus = e.target.closest("#tk-plus");
+  if (plus) { const f = $("tk-add"); f.hidden = !f.hidden; plus.setAttribute("aria-expanded", !f.hidden); if (!f.hidden) { $("tk-pool").value = $("pool").value.trim(); $("tk-pool").focus(); } return; }
+  if (!rm) return;
+  e.stopPropagation();
+  const t = tks.find(x => x.id === rm.dataset.rm);
+  if (!t || !confirm(`从列表移除 ${t.symbol}？（不影响任何仓位）`)) return;
+  try { await req("DELETE", `/p/tickers/${t.id}`); tks = tks.filter(x => x.id !== t.id); drawTickers(); tkMsg(`已移除 ${t.symbol}`); } catch (err) { tkMsg(err.message, true); }
+}, true);
+$("tk-add").onsubmit = async e => {
+  e.preventDefault();
+  const pool = $("tk-pool").value.trim(), sym = $("tk-sym").value.trim();
+  if (!/^0x[0-9a-fA-F]{40}$/.test(pool)) { tkMsg("池子地址格式不对，应为 0x 开头的 42 位地址", true); return; }
+  const b = $("tk-go"); busy(b, true, "读取中…");
+  try {
+    const t = await req("POST", "/p/tickers", {pool, symbol: sym || null});
+    tks.push(t); drawTickers(); $("tk-add").hidden = true; $("tk-pool").value = $("tk-sym").value = "";
+    tkMsg(`已添加 ${t.symbol}（${t.dex} ${(t.fee / 1e4).toFixed(2)}%${t.bstocks ? "" : "，非 bStocks 代币"}）`);
+    $("pool").value = t.pool; $("lo").value = $("hi").value = ""; syncTickers(); check();
+  } catch (err) { tkMsg(err.message, true); }
+  busy(b, false, "添加");
+};
+
 setMode(localStorage.getItem("rwalp.mode") === "track" ? "track" : "calc");
+loadTickers();
 loadPresets().catch(e => msg(e.message, true));
 loadPositions();
 })();

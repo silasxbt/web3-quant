@@ -114,3 +114,17 @@ def take_challenge(ch):
         if not snap.exists: return None
         t.delete(ref); return snap.to_dict()
     return tx(db().transaction())
+
+# ---- 自选标的（计算模式的快捷按钮） ----
+def tickers(): return sorted(_list("p_tickers"), key=lambda t: t.get("order", 0))
+def add_ticker(data): return _put("p_tickers", data)
+def delete_ticker(tid): return _del("p_tickers", tid)
+
+def get_state_flag(name):
+    if MEM: return _mem.get("flags", {}).get(name)
+    d = db().collection("p_state").document(name).get()
+    return d.exists
+
+def set_state_flag(name):
+    if MEM: _mem.setdefault("flags", {})[name] = True; return
+    db().collection("p_state").document(name).set({"at": time.time()})

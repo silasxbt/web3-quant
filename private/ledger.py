@@ -10,6 +10,8 @@
 投入事件可带 fees_before：开始记账时仓位里已经存在的未领取手续费（快捷导入时自动记录）。
 这部分是记账前赚的，后面领取或快照时会被一起算进来，所以要扣掉，不计入收益和年化。
 
+盈亏归因 attr：pnl = direction（股价方向）+ il（波动损失）+ fees（手续费）+ cost（成本，负数）。
+
 两个年化（都按资金加权平均本金、从首笔投入到现在的时长折算成年）：
   实际年化   = (当前价值 + 已提取 + 记账后手续费 − 投入 − 成本)  → 含标的价格波动（含无常损失）和手续费
   手续费年化 = 记账后手续费                                       → 只算手续费
@@ -54,4 +56,6 @@ def summarize(pos, evs, price=None, qusd=1.0, unit="usd"):
         if price and not closed and (stock or stable):
             hodl = (stock * price + stable) * (qusd if unit == "usd" else 1)
             out.update(hodl_value=hodl, vs_hodl=value + fees - hodl)
+            # 盈亏归因：四项相加 = pnl。方向 = 开仓时的持仓拿着不动的盈亏；波动损失 = LP 价值 − 持币价值（无常损失，≤0）
+            out["attr"] = dict(direction=hodl + wd - dep, il=value - hodl, fees=fees, cost=-cost)
     return out

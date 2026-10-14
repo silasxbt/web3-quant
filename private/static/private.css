@@ -75,3 +75,10 @@ body[data-mode="track"] #out > .empty { display:none; }
 #tk-msg:empty { display:none; }
 .pv-q { display:block; font:11px var(--mono); color:var(--dim); margin-top:1px; }
 .pv-card small { font:11px var(--mono); }
+.pv-attr { border-top:1px solid var(--rule); margin-top:10px; padding-top:9px; }
+.pv-attr-head { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; font-size:12px; margin-bottom:6px; }
+.pv-attr-head b { font:500 13px var(--mono); }
+.pv-attr-bar { display:flex; height:8px; gap:2px; border-radius:2px; overflow:hidden; }
+.pv-attr-bar i { min-width:2px; }
+.pv-attr-leg { display:flex; flex-wrap:wrap; gap:4px 16px; margin-top:6px; font:12px var(--mono); color:var(--dim); }
+.pv-attr-leg b { display:inline-block; width:8px; height:8px; border-radius:1px; margin-right:5px; }

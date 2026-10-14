@@ -149,6 +149,20 @@ function select(id, reanalyze) {
   }
   drawPos(r);
 }
+/* 盈亏归因：把盈亏拆成 股价方向 / 波动损失 / 手续费 / 成本（BNB 池再加 BNB 涨跌），并给出扣掉发行方风险后的手续费年化 */
+function attrHTML(r) {
+  const a = r.attribution, s = r.summary; if (!a) return "";
+  const parts = [["direction", bnbPos(r) ? "股价方向（相对 BNB）" : "股价方向", "var(--ice)"], ["quote", "BNB 涨跌", "#b9a3ff"],
+    ["il", "波动损失", "var(--out)"], ["fees", "手续费", "var(--in)"], ["cost", "成本", "var(--risk)"]].filter(p => a[p[0]] != null && Math.abs(a[p[0]]) >= 0.005);
+  const tot = parts.reduce((x, p) => x + Math.abs(a[p[0]]), 0) || 1;
+  const bar = parts.map(p => `<i style="flex:${(Math.abs(a[p[0]]) / tot).toFixed(4)};background:${p[2]};opacity:${a[p[0]] >= 0 ? 1 : .45}" title="${p[1]} ${signed(a[p[0]], usd)}"></i>`).join("");
+  const leg = parts.map(p => `<span><b style="background:${p[2]}"></b>${p[1]} ${sg(a[p[0]])}</span>`).join("");
+  const rp = Math.min(Math.max(+($("risk")?.value ?? 5), 0), 100) / 100;
+  const adj = s.fee_apr == null ? null : (1 - rp) * (1 + s.fee_apr) - 1;
+  const risk = adj == null ? "" : `<span class="dim">手续费年化 ${pct(s.fee_apr, 0)}，按发行方每年 ${pct(rp, 0)} 出事概率扣减后 <b class="${adj >= 0 ? "pos" : "neg"}">${pct(adj, 0)}</b></span>`;
+  return `<div class="pv-attr"><div class="pv-attr-head"><span>盈亏归因 <b>${sg(s.pnl)}</b></span>${risk}</div>
+    <div class="pv-attr-bar">${bar}</div><div class="pv-attr-leg">${leg}</div></div>`;
+}
 function drawPos(r) {
   const s = r.summary, Q = r.summary_q || {}, box = $("pv-pos"); box.dataset.id = r.id;
   const src = r.live?.nft ? `链上实时（NFT #${r.token_id}）` : s.snapshot_at ? `最近记录 ${ago(s.snapshot_at)}前` : "还没有价值记录";
@@ -167,6 +181,7 @@ function drawPos(r) {
       <div><dt>相对持币</dt><dd>${dual(r, sg(s.vs_hodl), sbn(Q.vs_hodl))}</dd></div>
       <div><dt>时长</dt><dd>${s.days.toFixed(1)} 天</dd></div>
     </dl>
+    ${attrHTML(r)}
     <p class="note">${bnbPos(r) ? "股票/BNB 仓位：上面每格第一行是 U 本位，第二行是 BNB 本位（BNB 涨跌不算盈亏）。" : ""}下方的深度图、区间评级、收益口径和调仓成本，都按这个仓位的实际区间和当前价值 ${num(s.value ?? s.deposited)} 计算。${s.days < 1 ? "持有不足 1 天，暂不显示年化。" : ""}</p>
     <div id="pv-log" hidden></div>`;
 }
@@ -174,7 +189,7 @@ $("pv-pos").addEventListener("click", async e => {
   const b = e.target.closest("[data-a]"); if (!b) return;
   const r = rows.find(x => x.id === $("pv-pos").dataset.id); if (!r) return;
   if (b.dataset.a === "sync") {
-    busy(b, true, "同步中…");
+    busy(b, true, "同步中，约 30 秒…");
     try { await req("POST", `/p/positions/${r.id}/sync`); await loadPositions(); } catch (err) { alert(err.message); busy(b, false, "同步链上"); }
   }
   if (b.dataset.a === "bt") {
@@ -277,6 +292,7 @@ $("tk-add").onsubmit = async e => {
   busy(b, false, "添加");
 };
 
+$("risk")?.addEventListener("input", () => { const r = rows.find(x => x.id === sel); if (r && mode === "track") drawPos(r); });
 setMode(localStorage.getItem("rwalp.mode") === "track" ? "track" : "calc");
 loadTickers();
 loadPresets().catch(e => msg(e.message, true));

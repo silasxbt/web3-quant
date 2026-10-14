@@ -166,7 +166,14 @@ def _view(pos, evs):
     sq = ledger.summarize(pos, evs, live.get("price"), q, "q") if sym == "BNB" else None
     p = live.get("price")
     in_range = (pos["lo"] <= p <= pos["hi"]) if p else None
-    return dict(pos, live=live, summary=s, summary_q=sq, quote_sym=sym, qusd=q, in_range=in_range, events=len(evs) - (1 if nft else 0))
+    attr = None
+    if sq and sq.get("attr") and s.get("pnl") is not None:   # 股票/BNB 仓位：先按 BNB 本位归因再折成 U，剩下的就是 BNB 自身涨跌
+        attr = {k: v * q for k, v in sq["attr"].items()}
+        attr["quote"] = s["pnl"] - sq["pnl"] * q
+    elif s.get("attr"):
+        attr = dict(s["attr"])
+    return dict(pos, live=live, summary=s, summary_q=sq, attribution=attr, quote_sym=sym, qusd=q, in_range=in_range,
+                events=len(evs) - (1 if nft else 0))
 
 @app.get("/p/positions")
 def list_positions():
@@ -230,6 +237,8 @@ def sync_snapshot(pid: str):
     live = _live(pos)
     if not live.get("nft"): raise HTTPException(502, live.get("error") or "读取链上仓位失败")
     n = live["nft"]
+    hist, err = _history(light_info(pos["pool"]), pos["token_id"])   # 顺便补上导入之后的链上加仓、减仓、领取
+    n = dict(n, history_added=_apply_history(pid, pos, hist)["added"] if hist else None, history_error=err)
     store.add_event({"position": pid, "type": "snapshot", "ts": time.time(), "value": n["value"], "fees": n["fees"],
                      "value_q": n["value_q"], "fees_q": n["fees_q"], "qusd": n["qusd"],
                      "stock": n["stock"], "stable": n["stable"], "price": n["price"], "note": "链上同步"})
@@ -296,6 +305,20 @@ def _write_history(pid, hist, n, now):
                          "fees_before": n["fees"], "fees_before_q": n["fees_q"],
                          "note": "快捷导入：按导入时链上持仓作为本金基准"})
 
+def _chain_event(e):
+    return e.get("block") is not None or str(e.get("note", "")).startswith("快捷导入")
+
+def _apply_history(pid, pos, hist):
+    """用链上历史替换台账里链上来源的记录（开仓、加仓、减仓、领取），手动记的保留。"""
+    old = [e for e in store.events(pid) if e["type"] in ("deposit", "withdraw", "collect") and _chain_event(e)]
+    have = {(e.get("block"), e["type"]) for e in old}
+    new = [e for e in hist["events"] if (e.get("block"), e["type"]) not in have]
+    if len(old) != len(hist["events"]) or new:
+        for e in old: store.delete_event(e["id"])
+        _write_history(pid, hist, None, time.time())
+    store.save_position({"opened": hist["opened"], "note": (pos.get("note") or "").split("（未取到")[0]}, pid)
+    return {"opened": hist["opened"], "events": len(hist["events"]), "added": len(new)}
+
 @app.post("/p/positions/{pid}/rebuild")
 def rebuild(pid: str):
     """从链上重建这个仓位的全周期台账（替换掉链上可得的记录，保留手动记的成本和备注类记录）。"""
@@ -304,11 +327,7 @@ def rebuild(pid: str):
     info = light_info(pos["pool"])
     hist, err = _history(info, pos["token_id"])
     if not hist: raise HTTPException(502, f"读取开仓历史失败：{err}")
-    for e in store.events(pid):
-        if e["type"] in ("deposit", "withdraw", "collect"): store.delete_event(e["id"])
-    _write_history(pid, hist, None, time.time())
-    store.save_position({"opened": hist["opened"], "note": (pos.get("note") or "").split("（未取到")[0]}, pid)
-    return {"opened": hist["opened"], "events": len(hist["events"])}
+    return _apply_history(pid, pos, hist)
 
 @app.post("/p/import")
 def quick_import(req: ImportReq):

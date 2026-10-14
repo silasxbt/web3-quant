@@ -266,6 +266,7 @@ function drawTickers() {
     + (tks.length < 10 ? `<button type="button" class="tk-plus" id="tk-plus" aria-expanded="${!$("tk-add").hidden}" title="按池子地址添加">＋</button>` : "")
     + `<span class="tk-count">${tks.length}/10</span>`;
   syncTickers();
+  if (typeof board === "function") board();   // 排行榜跟着自选列表走
 }
 const tkMsg = (t, bad) => { $("tk-msg").textContent = t; $("tk-msg").className = "hint" + (bad ? " err" : ""); };
 async function loadTickers() { try { tks = await req("GET", "/p/tickers"); drawTickers(); } catch (e) { tkMsg(e.message, true); } }

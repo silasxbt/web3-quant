@@ -66,10 +66,11 @@ export class SolanaAdapter {
   * Pools are snapshotted one after another (each snapshot is its own concurrent ≤10-account chunks, so its slot span
   * stays its own). Epoch and priority-fee reads start alongside; block times for every snapshot slot are read at the end.
   */
- async quotesAll(pools:Pool[],sizes=this.cfg.sizes):Promise<Map<string,Quote[]|Error>>{
+ async quotesAll(pools:Pool[],sizes=this.cfg.sizes,onSnapshot?:(p:Pool,at:number)=>void):Promise<Map<string,Quote[]|Error>>{
   const startedAt=Date.now(),shared=Promise.all([this.connection.getEpochInfo('confirmed'),this.net.rpc(this.cfg.solanaRpc,'getRecentPrioritizationFees',[[]])]);shared.catch(()=>{});
   const snaps=new Map<string,Awaited<ReturnType<SolanaAdapter['snapshot']>>|Error>();
-  for(const p of pools){try{snaps.set(p.id,await this.snapshot(p));}catch(e){snaps.set(p.id,e instanceof Error?e:new Error(String(e)));}}
+  // Each quote is stamped with its own snapshot time, not the end of the batch; callers may align other data at that moment.
+  for(const p of pools){try{const snap=await this.snapshot(p);snaps.set(p.id,snap);onSnapshot?.(p,snap.at);}catch(e){snaps.set(p.id,e instanceof Error?e:new Error(String(e)));}}
   const out=new Map<string,Quote[]|Error>();let epoch:any,micro=0;
   try{const [e,fees]=await shared;epoch=e;const priority=(fees as any[]).map(x=>Number(x.prioritizationFee)).sort((a,b)=>a-b);micro=priority[Math.floor(priority.length*0.75)]??0;}
   catch(e){for(const p of pools)out.set(p.id,e instanceof Error?e:new Error(String(e)));return out;}
@@ -105,13 +106,13 @@ export class SolanaAdapter {
    if(!this.static.has(p.id)){const baseA=mintA===p.base.address;this.static.set(p.id,{vault:(baseA?rpc.vaultA:rpc.vaultB).toBase58(),mint:p.base.address});}
    this.learned.set(p.id,[...view.requested]);
    const slot=traced.length?Math.max(...traced):null,span=traced.length?slot!-Math.min(...traced):0;
-   return {rpc,info:computeClmmPoolInfo[p.id],tickArrays:Object.values(computePoolTickData[p.id]??{}) as any[],slot,span};
+   return {rpc,info:computeClmmPoolInfo[p.id],tickArrays:Object.values(computePoolTickData[p.id]??{}) as any[],slot,span,at:Date.now()};
   }finally{this.view=null;}
   });
  }
  private compute(p:Pool,snap:Awaited<ReturnType<SolanaAdapter['snapshot']>>,sizes:number[],epoch:any,micro:number,slot:number,blockTime:number,startedAt:number):Quote[]{
   const {rpc,info,tickArrays,span}=snap;
-  const observedAt=Date.now();const baseA=p.base.address===rpc.mintA.toBase58();const spot=baseA?rpc.currentPrice:1/rpc.currentPrice;
+  const observedAt=snap.at;const baseA=p.base.address===rpc.mintA.toBase58();const spot=baseA?rpc.currentPrice:1/rpc.currentPrice;
   const gas=dec(5000).add(dec(micro).mul(300000).div(1e6)).div(1e9).toFixed();const quotes:Quote[]=[];
   for(const size of sizes){
    const amount=atoms(dec(size).div(p.market==='USDC/USDT'?1:p.initialPrice),p.base.decimals);

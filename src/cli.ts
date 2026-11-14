@@ -1,5 +1,5 @@
 import {Store} from './store.js';import {Collector} from './collector.js';import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';import {dirname} from 'node:path';import {snapshot,importSnapshot} from './snapshot.js';
-const command=process.argv[2]??'probe',store=new Store(process.env.DDA_DATA_DIR??'data');
+const command=process.argv[2]??'probe',store=new Store(process.env.DDA_DATA_DIR??(process.argv[2]?.startsWith('cexdex')?'data/cexdex':'data'));
 if(command==='probe'||command==='collect'){
  const collector=new Collector(store);for(const sig of ['SIGINT','SIGTERM'] as const)process.on(sig,()=>collector.stop());
  const minutes=Number(process.argv[3]??(command==='probe'?0.05:60));const fixed=process.env.DDA_FIXED_POOLS?JSON.parse(readFileSync(process.env.DDA_FIXED_POOLS,'utf8')):undefined;
@@ -11,4 +11,6 @@ if(command==='probe'||command==='collect'){
  const {research,markdown}=await import('./core/research.js');const id=process.argv[3]??store.sessions()[0]?.id;if(!id)throw new Error('暂无会话');const s=store.session(id);const r=research(s,store.cycles(id));
  if(command==='replay'){store.artifact('replay:'+id,id,r);console.log(JSON.stringify({id,digest:r.digest,cycles:r.quality.cycles,candidates:r.candidates.length}));}
  else{const path=process.argv[4]??'exports/'+(command==='snapshot'?'snapshot.json.gz':command==='dataset'?'dataset.json':'report.md');mkdirSync(dirname(path),{recursive:true});writeFileSync(path,command==='snapshot'?snapshot(store,id):command==='dataset'?JSON.stringify({version:r.version,gate:r.modelGate,rows:r.dataset}):markdown(r));console.log(path);}store.close();
-}else throw new Error('命令：probe | collect [分钟] | replay [会话] | report|snapshot|dataset [会话] [路径] | import 快照路径');
+}else if(command.startsWith('cexdex')){
+ const cx=await import('./cexdex/cli.js');await cx.run(command,process.argv.slice(3),store);store.close();
+}else throw new Error('命令：cexdex-discover|cexdex-collect|cexdex-report … | probe | collect [分钟] | replay [会话] | report|snapshot|dataset [会话] [路径] | import 快照路径');

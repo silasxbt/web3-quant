@@ -67,6 +67,10 @@ uv run --project research --locked python research/evaluate.py exports/dataset.j
 
 默认原始工作副本 30 天后先归档快照再清理。SQLite 和证据归档不自动删除；请按需管理磁盘。本文和本地验证不代表独立审查、合并或策略盈利证明。
 
+## 交易所—DEX 偏离研究（DDA-012）
+
+只读接入币安公开行情作为公允价，研究同时支持 BSC 与 Solana 充提的币在 DEX 上的偏离、持续时间与扣除成本后的收益。见 [交易所—DEX 偏离研究](notes/cexdex.md)；登记表 `config/cexdex-registry.json`。
+
 ## Mac 本地测试执行室
 
 新增独立入口 `pnpm test:serve`（http://127.0.0.1:8788），使用 `data/test-execution/` 保存测试钱包和执行账本。确定性故障测试可离线运行；公共测试网需先免费领取 tBNB / Devnet SOL，再初始化自有池。详见 [测试执行维护说明](notes/test-execution.md)。真实兑换尚未取得链上验证证据前保持 NOT RUN；本地待审，不接主网资金。

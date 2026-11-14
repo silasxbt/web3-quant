@@ -95,3 +95,6 @@ test('并发上限按端点计算：每个端点最多 2 个，不同端点互�
  try{await Promise.all([...Array.from({length:4},(_,i)=>n.rpc('https://a.invalid','getBlockTime',[i])),...Array.from({length:4},(_,i)=>n.rpc('https://b.invalid','getBlockTime',[i]))]);
   assert.equal(peak.get('a.invalid'),2);assert.equal(peak.get('b.invalid'),2);assert.equal(maxTotal,4);}
  finally{globalThis.fetch=original;rmSync(dir,{recursive:true,force:true});}});
+test('Solana 批量报价按各自快照时刻记观测时间，并在每个快照完成时回调',async()=>{const dir=mkdtempSync(join(tmpdir(),'dda-snapat-'));const {net:n}=fixtureNet(dir),a=new SolanaAdapter(n,defaults);
+ try{await a.init();const pool=fixturePool(),seen:number[]=[];const r=await a.quotesAll([pool],[100],(_p,at)=>seen.push(at));const qs=r.get(pool.id) as Quote[];
+  assert.equal(seen.length,1);assert.equal(qs[0].observedAt,seen[0]);assert.ok(qs[0].observedAt>=qs[0].startedAt);}finally{rmSync(dir,{recursive:true,force:true});}});

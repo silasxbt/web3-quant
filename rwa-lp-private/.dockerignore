@@ -1,3 +1,2 @@
-.git
-vendor/rwa-lp/.git
 __pycache__/
+*.pyc

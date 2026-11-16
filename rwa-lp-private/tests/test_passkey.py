@@ -1,5 +1,5 @@
 """单 Passkey 登录测试矩阵：用 cryptography 模拟认证器。
-运行：RWALP_MEMSTORE=1 PYTHONPATH=vendor/rwa-lp/service:. uv run --python 3.12 --with-requirements vendor/rwa-lp/service/requirements.txt --with cryptography --with httpx --with pytest pytest -q tests
+运行：RWALP_MEMSTORE=1 PYTHONPATH=../rwa-lp/service:. uv run --python 3.12 --with-requirements ../rwa-lp/service/requirements.txt --with cryptography --with httpx --with pytest pytest -q tests
 """
 import os, json, hashlib, struct, base64
 os.environ.update(RWALP_MEMSTORE="1", RP_ID="lp.silasxbt.com", SETUP_CODE="setup-code-for-tests", SESSION_SECRET="s" * 48)

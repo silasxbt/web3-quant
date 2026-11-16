@@ -7,6 +7,3 @@
 [submodule "dda/references/onchain-arbitrage-colearn"]
 	path = dda/references/onchain-arbitrage-colearn
 	url = https://github.com/qiaopengjun5162/onchain-arbitrage-colearn.git
-[submodule "rwa-lp-private/vendor/rwa-lp"]
-	path = rwa-lp-private/vendor/rwa-lp
-	url = https://github.com/silasxbt/rwa-lp.git

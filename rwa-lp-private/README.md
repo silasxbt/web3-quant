@@ -2,7 +2,7 @@
 
 > 本项目位于 web3-quant 仓库的 `rwa-lp-private/` 目录（2026-11-16 由原私有仓库 silasxbt/rwa-lp-private 连同历史并入，按所有者要求公开）。
 
-rwalp 的私有站：在开源版（本仓库 `rwa-lp/`，以 `vendor/rwa-lp` 子模块固定版本）之上，加分析预设、仓位台账、收益记录。
+rwalp 的私有站：在开源版（本仓库 `rwa-lp/service`，直接引用同一提交）之上，加分析预设、仓位台账、收益记录。
 
 - 网址：https://lp.silasxbt.com （Cloud Run `rwalp-private`）
 - 登录：整站只认第一次注册的那一把 Passkey（`private/passkey.py`），没有账号也没有密码。注册需要一次性设置码（Secret Manager `rwalp-private-setup-code`），注册成功后注册入口永久关闭。
@@ -10,15 +10,13 @@ rwalp 的私有站：在开源版（本仓库 `rwa-lp/`，以 `vendor/rwa-lp` �
 - 仓位填了 NFT 编号时，直接读链上实时价值和未领取手续费（只读）
 
 ```bash
-git submodule update --init --remote vendor/rwa-lp   # 同步开源版（在 rwa-lp-private/ 目录下执行）
+# 以下命令在 rwa-lp-private/ 目录下执行；开源版即 ../rwa-lp/service，无需同步
 # 本地运行（数据只存内存）
-RWALP_MEMSTORE=1 PYTHONPATH=vendor/rwa-lp/service:. uv run --python 3.12 --with-requirements vendor/rwa-lp/service/requirements.txt --with cryptography uvicorn private.main:app --port 8081
+RWALP_MEMSTORE=1 PYTHONPATH=../rwa-lp/service:. uv run --python 3.12 --with-requirements ../rwa-lp/service/requirements.txt --with cryptography uvicorn private.main:app --port 8081
 # 测试矩阵
-RWALP_MEMSTORE=1 PYTHONPATH=vendor/rwa-lp/service:. uv run --python 3.12 --with-requirements vendor/rwa-lp/service/requirements.txt --with cryptography --with httpx --with pytest pytest -q tests
-# 部署
-gcloud run deploy rwalp-private --source . --region asia-east1 --allow-unauthenticated --max-instances 2 \
-  --set-env-vars RP_ID=lp.silasxbt.com \
-  --set-secrets SETUP_CODE=rwalp-private-setup-code:latest,SESSION_SECRET=rwalp-private-session-secret:latest
+RWALP_MEMSTORE=1 PYTHONPATH=../rwa-lp/service:. uv run --python 3.12 --with-requirements ../rwa-lp/service/requirements.txt --with cryptography --with httpx --with pytest pytest -q tests
+# 部署（把 ../rwa-lp/service 与 private/ 拼成构建目录后 gcloud run deploy）
+./deploy.sh
 ```
 
 ## 注册

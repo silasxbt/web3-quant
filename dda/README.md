@@ -5,11 +5,11 @@
 ## 获取完整项目
 
 ```sh
-git clone --recurse-submodules https://github.com/silasxbt/dda.git
-cd dda
+git clone --recurse-submodules https://github.com/silasxbt/web3-quant.git
+cd web3-quant/dda
 ```
 
-已有副本运行 `git submodule update --init --recursive`。三个参考仓库以固定提交的子模块保留原始来源；项目本身不依赖它们启动。源码、前端、合约、部署脚本、锁文件、研究与维护文档均在本仓库。
+本项目位于 web3-quant 仓库的 `dda/` 目录（2026-11-16 由原 silasxbt/dda 仓库连同提交历史并入，原仓库已删除）。已有副本运行 `git submodule update --init --recursive`。三个参考仓库以固定提交的子模块保留原始来源；项目本身不依赖它们启动。源码、前端、合约、部署脚本、锁文件、研究与维护文档均在本仓库。
 
 历史报告与导出见 `artifacts/deliverables/`；只读研究数据库备份与原始记录见 `artifacts/research-data/`，它们是 2026-10-15 的历史证据，不是实时行情。备份不会自动覆盖运行数据库。Mac 启动入口见 `launchers/`。文件范围与验证状态见 [仓库导入记录](notes/repository-import.md)。
 

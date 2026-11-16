@@ -1,0 +1,9 @@
+[submodule "dda/references/EVM-Arbitrage-Bot"]
+	path = dda/references/EVM-Arbitrage-Bot
+	url = https://github.com/OnlyF0uR/EVM-Arbitrage-Bot.git
+[submodule "dda/references/cross-chain-arbs-simple"]
+	path = dda/references/cross-chain-arbs-simple
+	url = https://github.com/boz1/cross-chain-arbs-simple.git
+[submodule "dda/references/onchain-arbitrage-colearn"]
+	path = dda/references/onchain-arbitrage-colearn
+	url = https://github.com/qiaopengjun5162/onchain-arbitrage-colearn.git

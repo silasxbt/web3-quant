@@ -1,0 +1,83 @@
+"""Telegram 机器人：发消息 + 处理命令。未配置 TG_TOKEN 时静默跳过。"""
+import os, re, requests
+from . import store
+
+TOKEN = os.environ.get("TG_TOKEN", "")
+API = f"https://api.telegram.org/bot{TOKEN}"
+POOL_RE = re.compile(r"^0x[0-9a-fA-F]{40}$")
+MAX_WATCHES = 10
+
+HELP = """rwalp 机器人：bStocks 代币化美股 LP 风控
+
+/watch <池子地址> <下沿> <上沿>  订阅区间提醒（稳定币池按美元，股票/BNB 池按 BNB）
+/list  查看我的订阅
+/unwatch <编号>  取消订阅
+/check <池子地址> [下沿 上沿]  池子体检 + 手续费估算
+/alerts  最近的池子异动（撤流动性、价格偏离、异常放量、急涨急跌）
+/stop  停止接收所有提醒
+
+订阅后会收到：出区间/近区间提醒、区间评级变化（安全/警惕/危险）、所订阅池子的异动、bStocks 治理告警（升级、暂停、黑名单、异常增发）。
+网页版：https://rwalp.silasxbt.com"""
+
+def send(chat_id, text):
+    if not TOKEN: return
+    try:
+        requests.post(f"{API}/sendMessage", json={"chat_id": chat_id, "text": text, "disable_web_page_preview": True}, timeout=10)
+    except requests.RequestException:
+        pass
+
+def handle(update):
+    from .analytics import pool_info, estimate  # 避免冷启动时加载
+    from .monitor import zone
+    msg = update.get("message") or update.get("edited_message")
+    if not msg or "text" not in msg: return
+    chat, args = msg["chat"]["id"], msg["text"].split()
+    cmd = args[0].split("@")[0].lower()
+
+    if cmd in ("/start", "/help"):
+        store.add_chat(chat); send(chat, HELP)
+    elif cmd == "/stop":
+        for w in store.watches(chat): store.remove_watch(chat, w["id"])
+        store.remove_chat(chat); send(chat, "已取消全部订阅。发送 /start 重新开启。")
+    elif cmd == "/list":
+        ws = store.watches(chat)
+        send(chat, "\n".join(f"{w['id'][:6]}  {w['name']}  ${w['lo']:,.2f} – ${w['hi']:,.2f}  {w.get('zone', '')}" for w in ws)
+             or "还没有订阅。用 /watch <池子地址> <下沿> <上沿> 添加。")
+    elif cmd == "/alerts":
+        import time
+        items = (store.get_state("pool_log") or {}).get("items", [])[:10]
+        send(chat, "\n\n".join(f"{time.strftime('%m-%d %H:%M', time.gmtime(x['t'] + 8 * 3600))}  {x['name']}\n{x['text']}" for x in items)
+             or "最近没有池子异动。")
+    elif cmd == "/unwatch" and len(args) == 2:
+        hit = [w for w in store.watches(chat) if w["id"].startswith(args[1])]
+        ok = len(hit) == 1 and store.remove_watch(chat, hit[0]["id"])
+        send(chat, "已取消。" if ok else "没找到这个编号，先用 /list 查看。")
+    elif cmd == "/watch" and len(args) == 4 and POOL_RE.match(args[1]):
+        if len(store.watches(chat)) >= MAX_WATCHES: return send(chat, f"最多订阅 {MAX_WATCHES} 个。")
+        try:
+            lo, hi = sorted(map(float, args[2:4]))
+            i = pool_info(args[1])
+        except Exception as e:
+            return send(chat, f"添加失败：{e}")
+        store.add_chat(chat)
+        z = zone(lo, hi, i["price"])
+        wid = store.add_watch(chat, i["pool"], i["name"], lo, hi, z, i["quote_sym"])
+        warn = "" if i["dex"] and i["canonical"] else "\n⚠️ 这不是官方 factory 创建的池子，注意仿盘风险。"
+        from .position import fmt_px
+        unit = "（股票/BNB 池：上下沿按 BNB 填）" if i["quote_kind"] == "bnb" else ""
+        send(chat, f"已订阅 {wid[:6]}：{i['name']}\n当前 {fmt_px(i, i['price'])}，区间 {fmt_px(i, lo)} – {fmt_px(i, hi)}（{z}）{unit}{warn}")
+    elif cmd == "/check" and len(args) in (2, 4) and POOL_RE.match(args[1]):
+        try:
+            i = pool_info(args[1])
+            lo, hi = sorted(map(float, args[2:4])) if len(args) == 4 else (i["price"] * 0.96, i["price"] * 1.06)
+            e = estimate(i, lo, hi, 1000)
+        except Exception as ex:
+            return send(chat, f"查询失败：{ex}")
+        flags = "\n".join(("✅ " if f["ok"] else "❌ " if f["ok"] is False else "ℹ️ ") + f["text"] for f in i["flags"])
+        from .position import fmt_px
+        send(chat, f"{i['name']}  {fmt_px(i, i['price'])}（${i['price_usd']:,.2f}）\n{flags}\n\n$1000 @ {fmt_px(i, lo)} – {fmt_px(i, hi)}\n"
+                   f"份额 {e['share']*100:.3f}%\n"
+                   + "\n".join(f"{k:>3}  ${w['fee_day']:.2f}/天  年化 {w['apr']*100:.0f}%" for k, w in e["windows"].items())
+                   + "\n（未扣无常损失）")
+    else:
+        send(chat, HELP)

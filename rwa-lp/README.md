@@ -1,5 +1,7 @@
 # rwa-lp
 
+> 本项目位于 web3-quant 仓库的 `rwa-lp/` 目录（2026-11-16 由 silasxbt/rwa-lp 连同提交历史并入）。在线服务从本目录的 `service/` 构建部署。
+
 BSC 上 bStocks 代币化美股（QQQB、AAPLB 等）的 V3 集中流动性做市：风控监控、池子体检、区间回测。
 
 所有脚本都带 PEP 723 依赖声明，装好 [uv](https://docs.astral.sh/uv/) 直接运行，无需 API key（用 publicnode 公共 RPC + GeckoTerminal）。

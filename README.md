@@ -6,6 +6,7 @@
 
 - `future-quant/`：跨交易所永续合约价差监控与闪电审计项目。
 - `dda/`：BSC / Solana DEX 跨链套利与交易所—DEX 偏离研究系统（Node.js / TypeScript，只读采集、回放与模拟），见 [dda/README.md](dda/README.md)。克隆时加 `--recurse-submodules` 以获取其参考仓库。
+- `rwa-lp/`：BSC 上 bStocks 代币化美股 V3 LP 做市研究、风控监控与在线服务（rwalp.silasxbt.com，GCP Cloud Run），见 [rwa-lp/README.md](rwa-lp/README.md)。
 
 这些项目统一归在 `web3-quant` 仓库里。
 

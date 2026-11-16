@@ -1,0 +1,1707 @@
+{
+ "version": 1,
+ "createdAt": "2026-10-21T07:58:53.595Z",
+ "source": "币安公开网络列表 + 链上精度 + 发现时 100 美元报价",
+ "takerFee": 0.001,
+ "coins": [
+  {
+   "coin": "1000CAT",
+   "symbol": "1000CATUSDT",
+   "networks": [
+    {
+     "coin": "1000CAT",
+     "network": "BSC",
+     "contract": "0x6894cde390a3f51155ea41ed24a33a4827d3063d",
+     "withdrawFee": "12",
+     "withdrawMin": "24",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": true,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    },
+    {
+     "coin": "1000CAT",
+     "network": "SOL",
+     "contract": "3joMReCCSESngJEpFLoKR2dNcChjSRCDtybQet5uSpse",
+     "withdrawFee": "290",
+     "withdrawMin": "580",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": true,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    }
+   ],
+   "assets": {},
+   "pools": [],
+   "excluded": "交易所计价单位是链上代币的倍数，单位换算未核验"
+  },
+  {
+   "coin": "1MBABYDOGE",
+   "symbol": "1MBABYDOGEUSDT",
+   "networks": [
+    {
+     "coin": "1MBABYDOGE",
+     "network": "BSC",
+     "contract": "0xc748673057861a797275cd8a068abb95a902e8de",
+     "withdrawFee": "60",
+     "withdrawMin": "120",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": true,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    },
+    {
+     "coin": "1MBABYDOGE",
+     "network": "SOL",
+     "contract": "7dUKUopcNWW6CcU4eRxCHh1uiMh32zDrmGf6ufqhxann",
+     "withdrawFee": "1443",
+     "withdrawMin": "2886",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": true,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    }
+   ],
+   "assets": {},
+   "pools": [],
+   "excluded": "交易所计价单位是链上代币的倍数，单位换算未核验"
+  },
+  {
+   "coin": "BIO",
+   "symbol": "BIOUSDT",
+   "networks": [
+    {
+     "coin": "BIO",
+     "network": "BSC",
+     "contract": "0x226a2fa2556c48245e57cd1cba4c6c9e67077dd2",
+     "withdrawFee": "1",
+     "withdrawMin": "10",
+     "minConfirm": 1,
+     "depositEnable": false,
+     "withdrawEnable": false,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    },
+    {
+     "coin": "BIO",
+     "network": "SOL",
+     "contract": "bioJ9JTqW62MLz7UKHU69gtKhPpGi1BQhccj2kmSvUJ",
+     "withdrawFee": "21",
+     "withdrawMin": "42",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": true,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    }
+   ],
+   "assets": {},
+   "pools": [],
+   "excluded": "币安 BSC 或 Solana 充提未同时开启"
+  },
+  {
+   "coin": "BMT",
+   "symbol": "BMTUSDT",
+   "networks": [
+    {
+     "coin": "BMT",
+     "network": "BSC",
+     "contract": "0x7d814b9ed370ec0a502edc3267393bf62d891b62",
+     "withdrawFee": "1.14",
+     "withdrawMin": "2.28",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": true,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    },
+    {
+     "coin": "BMT",
+     "network": "SOL",
+     "contract": "FQgtfugBdpFN7PZ6NdPrZpVLDBrPGxXesi4gVu3vErhY",
+     "withdrawFee": "27",
+     "withdrawMin": "54",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": true,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    }
+   ],
+   "assets": {
+    "bsc": {
+     "id": "bsc:BMT@0x7d814b9ed370ec0a502edc3267393bf62d891b62",
+     "chain": "bsc",
+     "address": "0x7d814b9ed370ec0a502edc3267393bf62d891b62",
+     "symbol": "BMT",
+     "decimals": 18,
+     "kind": "wrapped",
+     "provenance": "币安 BSC 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+    },
+    "solana": {
+     "id": "solana:BMT@FQgtfugBdpFN7PZ6NdPrZpVLDBrPGxXesi4gVu3vErhY",
+     "chain": "solana",
+     "address": "FQgtfugBdpFN7PZ6NdPrZpVLDBrPGxXesi4gVu3vErhY",
+     "symbol": "BMT",
+     "decimals": 9,
+     "kind": "wrapped",
+     "provenance": "币安 SOL 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+    }
+   },
+   "pools": [
+    {
+     "id": "0xB9ce7C953C296796aB665142118B206B15aeb436",
+     "chain": "bsc",
+     "market": "BMT/USDT",
+     "dex": "PancakeSwap V3",
+     "base": {
+      "id": "bsc:BMT@0x7d814b9ed370ec0a502edc3267393bf62d891b62",
+      "chain": "bsc",
+      "address": "0x7d814b9ed370ec0a502edc3267393bf62d891b62",
+      "symbol": "BMT",
+      "decimals": 18,
+      "kind": "wrapped",
+      "provenance": "币安 BSC 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+     },
+     "quote": {
+      "id": "bsc:USDT-peg",
+      "chain": "bsc",
+      "address": "0x55d398326f99059ff775485246999027b3197955",
+      "symbol": "USDT",
+      "decimals": 18,
+      "kind": "wrapped",
+      "provenance": "BSC 封装表示；跨链兑付路径未验证"
+     },
+     "fee": 0.0025,
+     "program": "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865",
+     "initialPrice": 0.02007,
+     "enabled": true
+    },
+    {
+     "id": "0x09F9789CF2DbA13e6E1cE8Cfdcd3F751D2917fc5",
+     "chain": "bsc",
+     "market": "BMT/WBNB",
+     "dex": "PancakeSwap V3",
+     "base": {
+      "id": "bsc:BMT@0x7d814b9ed370ec0a502edc3267393bf62d891b62",
+      "chain": "bsc",
+      "address": "0x7d814b9ed370ec0a502edc3267393bf62d891b62",
+      "symbol": "BMT",
+      "decimals": 18,
+      "kind": "wrapped",
+      "provenance": "币安 BSC 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+     },
+     "quote": {
+      "id": "bsc:WBNB",
+      "chain": "bsc",
+      "address": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+      "symbol": "WBNB",
+      "decimals": 18,
+      "kind": "native",
+      "provenance": "BNB 原生币的链内封装"
+     },
+     "fee": 0.01,
+     "program": "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865",
+     "initialPrice": 0.02007,
+     "enabled": true
+    },
+    {
+     "id": "GLfEiK21UZus4G5BeyUa9PMZZac1DzbyBx99K1d6enYy",
+     "chain": "solana",
+     "market": "BMT/USDC",
+     "dex": "Raydium CLMM",
+     "base": {
+      "id": "solana:BMT@FQgtfugBdpFN7PZ6NdPrZpVLDBrPGxXesi4gVu3vErhY",
+      "chain": "solana",
+      "address": "FQgtfugBdpFN7PZ6NdPrZpVLDBrPGxXesi4gVu3vErhY",
+      "symbol": "BMT",
+      "decimals": 9,
+      "kind": "wrapped",
+      "provenance": "币安 SOL 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+     },
+     "quote": {
+      "id": "solana:USDC",
+      "chain": "solana",
+      "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "symbol": "USDC",
+      "decimals": 6,
+      "kind": "issuer",
+      "provenance": "Circle 原生 USDC"
+     },
+     "fee": 0.0025,
+     "program": "CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK",
+     "initialPrice": 0.02007,
+     "enabled": true
+    },
+    {
+     "id": "CTpkCQufppiECZJesCkvy1nETmVQQMFK41EoFjw1x4WG",
+     "chain": "solana",
+     "market": "BMT/SOL",
+     "dex": "Raydium CLMM",
+     "base": {
+      "id": "solana:BMT@FQgtfugBdpFN7PZ6NdPrZpVLDBrPGxXesi4gVu3vErhY",
+      "chain": "solana",
+      "address": "FQgtfugBdpFN7PZ6NdPrZpVLDBrPGxXesi4gVu3vErhY",
+      "symbol": "BMT",
+      "decimals": 9,
+      "kind": "wrapped",
+      "provenance": "币安 SOL 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+     },
+     "quote": {
+      "id": "solana:SOL",
+      "chain": "solana",
+      "address": "So11111111111111111111111111111111111111112",
+      "symbol": "SOL",
+      "decimals": 9,
+      "kind": "native",
+      "provenance": "SOL 原生币的链内封装"
+     },
+     "fee": 0.01,
+     "program": "CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK",
+     "initialPrice": 0.02007,
+     "enabled": true
+    }
+   ]
+  },
+  {
+   "coin": "BONK",
+   "symbol": "BONKUSDT",
+   "networks": [
+    {
+     "coin": "BONK",
+     "network": "BSC",
+     "contract": "0xa697e272a73744b343528c3bc4702f2565b2f422",
+     "withdrawFee": "7238",
+     "withdrawMin": "14476",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": true,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    },
+    {
+     "coin": "BONK",
+     "network": "SOL",
+     "contract": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+     "withdrawFee": "173086",
+     "withdrawMin": "346172",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": true,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    }
+   ],
+   "assets": {
+    "bsc": {
+     "id": "bsc:BONK@0xa697e272a73744b343528c3bc4702f2565b2f422",
+     "chain": "bsc",
+     "address": "0xa697e272a73744b343528c3bc4702f2565b2f422",
+     "symbol": "BONK",
+     "decimals": 5,
+     "kind": "wrapped",
+     "provenance": "币安 BSC 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+    },
+    "solana": {
+     "id": "solana:BONK@DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+     "chain": "solana",
+     "address": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+     "symbol": "BONK",
+     "decimals": 5,
+     "kind": "wrapped",
+     "provenance": "币安 SOL 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+    }
+   },
+   "pools": [
+    {
+     "id": "0x2f74ad2c64be7DC07C9f51E9d338EcB7C1ee0B18",
+     "chain": "bsc",
+     "market": "BONK/USDT",
+     "dex": "PancakeSwap V3",
+     "base": {
+      "id": "bsc:BONK@0xa697e272a73744b343528c3bc4702f2565b2f422",
+      "chain": "bsc",
+      "address": "0xa697e272a73744b343528c3bc4702f2565b2f422",
+      "symbol": "BONK",
+      "decimals": 5,
+      "kind": "wrapped",
+      "provenance": "币安 BSC 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+     },
+     "quote": {
+      "id": "bsc:USDT-peg",
+      "chain": "bsc",
+      "address": "0x55d398326f99059ff775485246999027b3197955",
+      "symbol": "USDT",
+      "decimals": 18,
+      "kind": "wrapped",
+      "provenance": "BSC 封装表示；跨链兑付路径未验证"
+     },
+     "fee": 0.01,
+     "program": "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865",
+     "initialPrice": 0.000003105,
+     "enabled": true
+    },
+    {
+     "id": "0x1A1703Bf5f1Da9DB0f62d17e8c54e84Fd732D695",
+     "chain": "bsc",
+     "market": "BONK/WBNB",
+     "dex": "PancakeSwap V3",
+     "base": {
+      "id": "bsc:BONK@0xa697e272a73744b343528c3bc4702f2565b2f422",
+      "chain": "bsc",
+      "address": "0xa697e272a73744b343528c3bc4702f2565b2f422",
+      "symbol": "BONK",
+      "decimals": 5,
+      "kind": "wrapped",
+      "provenance": "币安 BSC 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+     },
+     "quote": {
+      "id": "bsc:WBNB",
+      "chain": "bsc",
+      "address": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+      "symbol": "WBNB",
+      "decimals": 18,
+      "kind": "native",
+      "provenance": "BNB 原生币的链内封装"
+     },
+     "fee": 0.01,
+     "program": "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865",
+     "initialPrice": 0.000003105,
+     "enabled": true
+    },
+    {
+     "id": "3UwfrdLTpAjxTRni1boc5HUWe6hzc4HgE5yLdvEp2Noc",
+     "chain": "solana",
+     "market": "BONK/USDC",
+     "dex": "Raydium CLMM",
+     "base": {
+      "id": "solana:BONK@DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+      "chain": "solana",
+      "address": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+      "symbol": "BONK",
+      "decimals": 5,
+      "kind": "wrapped",
+      "provenance": "币安 SOL 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+     },
+     "quote": {
+      "id": "solana:USDC",
+      "chain": "solana",
+      "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "symbol": "USDC",
+      "decimals": 6,
+      "kind": "issuer",
+      "provenance": "Circle 原生 USDC"
+     },
+     "fee": 0.0015,
+     "program": "CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK",
+     "initialPrice": 0.000003105,
+     "enabled": true
+    },
+    {
+     "id": "GtKKKs3yaPdHbQd2aZS4SfWhy8zQ988BJGnKNndLxYsN",
+     "chain": "solana",
+     "market": "BONK/SOL",
+     "dex": "Raydium CLMM",
+     "base": {
+      "id": "solana:BONK@DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+      "chain": "solana",
+      "address": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+      "symbol": "BONK",
+      "decimals": 5,
+      "kind": "wrapped",
+      "provenance": "币安 SOL 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+     },
+     "quote": {
+      "id": "solana:SOL",
+      "chain": "solana",
+      "address": "So11111111111111111111111111111111111111112",
+      "symbol": "SOL",
+      "decimals": 9,
+      "kind": "native",
+      "provenance": "SOL 原生币的链内封装"
+     },
+     "fee": 0.0025,
+     "program": "CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK",
+     "initialPrice": 0.000003105,
+     "enabled": true
+    }
+   ]
+  },
+  {
+   "coin": "CGPT",
+   "symbol": "CGPTUSDT",
+   "networks": [
+    {
+     "coin": "CGPT",
+     "network": "BSC",
+     "contract": "0x9840652dc04fb9db2c43853633f0f62be6f00f98",
+     "withdrawFee": "1.01",
+     "withdrawMin": "2.02",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": true,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    },
+    {
+     "coin": "CGPT",
+     "network": "SOL",
+     "contract": "CCDfDXZxzZtkZLuhY48gyKdXc5KywqpR8xEVHHh8ck1G",
+     "withdrawFee": "24",
+     "withdrawMin": "48",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": true,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    }
+   ],
+   "assets": {
+    "bsc": {
+     "id": "bsc:CGPT@0x9840652dc04fb9db2c43853633f0f62be6f00f98",
+     "chain": "bsc",
+     "address": "0x9840652dc04fb9db2c43853633f0f62be6f00f98",
+     "symbol": "CGPT",
+     "decimals": 18,
+     "kind": "wrapped",
+     "provenance": "币安 BSC 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+    },
+    "solana": {
+     "id": "solana:CGPT@CCDfDXZxzZtkZLuhY48gyKdXc5KywqpR8xEVHHh8ck1G",
+     "chain": "solana",
+     "address": "CCDfDXZxzZtkZLuhY48gyKdXc5KywqpR8xEVHHh8ck1G",
+     "symbol": "CGPT",
+     "decimals": 9,
+     "kind": "wrapped",
+     "provenance": "币安 SOL 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+    }
+   },
+   "pools": [
+    {
+     "id": "0x1E8D7AB96323953faC85ab687f5D38b45344e62d",
+     "chain": "bsc",
+     "market": "CGPT/USDT",
+     "dex": "PancakeSwap V3",
+     "base": {
+      "id": "bsc:CGPT@0x9840652dc04fb9db2c43853633f0f62be6f00f98",
+      "chain": "bsc",
+      "address": "0x9840652dc04fb9db2c43853633f0f62be6f00f98",
+      "symbol": "CGPT",
+      "decimals": 18,
+      "kind": "wrapped",
+      "provenance": "币安 BSC 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+     },
+     "quote": {
+      "id": "bsc:USDT-peg",
+      "chain": "bsc",
+      "address": "0x55d398326f99059ff775485246999027b3197955",
+      "symbol": "USDT",
+      "decimals": 18,
+      "kind": "wrapped",
+      "provenance": "BSC 封装表示；跨链兑付路径未验证"
+     },
+     "fee": 0.0005,
+     "program": "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865",
+     "initialPrice": 0.02199,
+     "enabled": true
+    },
+    {
+     "id": "0x9338892AC6B2b19ccF17A84D93713aA14CcB2193",
+     "chain": "bsc",
+     "market": "CGPT/WBNB",
+     "dex": "PancakeSwap V3",
+     "base": {
+      "id": "bsc:CGPT@0x9840652dc04fb9db2c43853633f0f62be6f00f98",
+      "chain": "bsc",
+      "address": "0x9840652dc04fb9db2c43853633f0f62be6f00f98",
+      "symbol": "CGPT",
+      "decimals": 18,
+      "kind": "wrapped",
+      "provenance": "币安 BSC 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+     },
+     "quote": {
+      "id": "bsc:WBNB",
+      "chain": "bsc",
+      "address": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+      "symbol": "WBNB",
+      "decimals": 18,
+      "kind": "native",
+      "provenance": "BNB 原生币的链内封装"
+     },
+     "fee": 0.01,
+     "program": "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865",
+     "initialPrice": 0.02199,
+     "enabled": true
+    },
+    {
+     "id": "GYT9cqiwgG8hWqrs6Jg9z6QjnNh1mbDr9TR1We2YWy42",
+     "chain": "solana",
+     "market": "CGPT/USDC",
+     "dex": "Raydium CLMM",
+     "base": {
+      "id": "solana:CGPT@CCDfDXZxzZtkZLuhY48gyKdXc5KywqpR8xEVHHh8ck1G",
+      "chain": "solana",
+      "address": "CCDfDXZxzZtkZLuhY48gyKdXc5KywqpR8xEVHHh8ck1G",
+      "symbol": "CGPT",
+      "decimals": 9,
+      "kind": "wrapped",
+      "provenance": "币安 SOL 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+     },
+     "quote": {
+      "id": "solana:USDC",
+      "chain": "solana",
+      "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "symbol": "USDC",
+      "decimals": 6,
+      "kind": "issuer",
+      "provenance": "Circle 原生 USDC"
+     },
+     "fee": 0.0025,
+     "program": "CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK",
+     "initialPrice": 0.02199,
+     "enabled": true
+    }
+   ]
+  },
+  {
+   "coin": "FDUSD",
+   "symbol": "FDUSDUSDT",
+   "networks": [
+    {
+     "coin": "FDUSD",
+     "network": "BSC",
+     "contract": "0xc5f0f7b66764f6ec8c8dff7ba683102295e16409",
+     "withdrawFee": "0.005",
+     "withdrawMin": "5",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": true,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    },
+    {
+     "coin": "FDUSD",
+     "network": "SOL",
+     "contract": "9zNQRsGLjNKwCUU5Gq5LR8beUCPzQMVMqKAi3SSZh54u",
+     "withdrawFee": "0.5",
+     "withdrawMin": "5",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": true,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    }
+   ],
+   "assets": {
+    "bsc": {
+     "id": "bsc:FDUSD@0xc5f0f7b66764f6ec8c8dff7ba683102295e16409",
+     "chain": "bsc",
+     "address": "0xc5f0f7b66764f6ec8c8dff7ba683102295e16409",
+     "symbol": "FDUSD",
+     "decimals": 18,
+     "kind": "wrapped",
+     "provenance": "币安 BSC 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+    },
+    "solana": {
+     "id": "solana:FDUSD@9zNQRsGLjNKwCUU5Gq5LR8beUCPzQMVMqKAi3SSZh54u",
+     "chain": "solana",
+     "address": "9zNQRsGLjNKwCUU5Gq5LR8beUCPzQMVMqKAi3SSZh54u",
+     "symbol": "FDUSD",
+     "decimals": 6,
+     "kind": "wrapped",
+     "provenance": "币安 SOL 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+    }
+   },
+   "pools": [
+    {
+     "id": "0xbF72B6485E4b31601aFe7B0a1210Be2004D2B1d6",
+     "chain": "bsc",
+     "market": "FDUSD/USDT",
+     "dex": "PancakeSwap V3",
+     "base": {
+      "id": "bsc:FDUSD@0xc5f0f7b66764f6ec8c8dff7ba683102295e16409",
+      "chain": "bsc",
+      "address": "0xc5f0f7b66764f6ec8c8dff7ba683102295e16409",
+      "symbol": "FDUSD",
+      "decimals": 18,
+      "kind": "wrapped",
+      "provenance": "币安 BSC 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+     },
+     "quote": {
+      "id": "bsc:USDT-peg",
+      "chain": "bsc",
+      "address": "0x55d398326f99059ff775485246999027b3197955",
+      "symbol": "USDT",
+      "decimals": 18,
+      "kind": "wrapped",
+      "provenance": "BSC 封装表示；跨链兑付路径未验证"
+     },
+     "fee": 0.0001,
+     "program": "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865",
+     "initialPrice": 0.99905,
+     "enabled": true
+    },
+    {
+     "id": "0xf66A930Ed3b004BA16ee11b3A9B142EAf2259b0d",
+     "chain": "bsc",
+     "market": "FDUSD/USDC",
+     "dex": "PancakeSwap V3",
+     "base": {
+      "id": "bsc:FDUSD@0xc5f0f7b66764f6ec8c8dff7ba683102295e16409",
+      "chain": "bsc",
+      "address": "0xc5f0f7b66764f6ec8c8dff7ba683102295e16409",
+      "symbol": "FDUSD",
+      "decimals": 18,
+      "kind": "wrapped",
+      "provenance": "币安 BSC 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+     },
+     "quote": {
+      "id": "bsc:USDC-peg",
+      "chain": "bsc",
+      "address": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
+      "symbol": "USDC",
+      "decimals": 18,
+      "kind": "wrapped",
+      "provenance": "Binance-Peg；不等同 Circle 原生 USDC；跨链兑付路径未验证"
+     },
+     "fee": 0.0001,
+     "program": "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865",
+     "initialPrice": 0.99905,
+     "enabled": true
+    }
+   ]
+  },
+  {
+   "coin": "GMT",
+   "symbol": "GMTUSDT",
+   "networks": [
+    {
+     "coin": "GMT",
+     "network": "BSC",
+     "contract": "0x3019bf2a2ef8040c242c9a4c5c4bd4c81678b2a1",
+     "withdrawFee": "3.03",
+     "withdrawMin": "6.06",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": false,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    },
+    {
+     "coin": "GMT",
+     "network": "SOL",
+     "contract": "7i5KKsX2weiTkry7jA4ZwSuXGhs5eJBEjY8vVxR4pfRx",
+     "withdrawFee": "72",
+     "withdrawMin": "144",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": false,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    }
+   ],
+   "assets": {},
+   "pools": [],
+   "excluded": "币安 BSC 或 Solana 充提未同时开启"
+  },
+  {
+   "coin": "GST",
+   "symbol": "GSTUSDT",
+   "networks": [
+    {
+     "coin": "GST",
+     "network": "BSC",
+     "contract": "0x4a2c860cec6471b9f5f5a336eb4f38bb21683c98",
+     "withdrawFee": "19",
+     "withdrawMin": "38",
+     "minConfirm": 1,
+     "depositEnable": false,
+     "withdrawEnable": false,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    },
+    {
+     "coin": "GST",
+     "network": "SOL",
+     "contract": "AFbX8oGjGpmVFywbVouvhQSRmiW2aR1mohfahi4Y2AdB",
+     "withdrawFee": "220",
+     "withdrawMin": "440",
+     "minConfirm": 1,
+     "depositEnable": false,
+     "withdrawEnable": false,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    }
+   ],
+   "assets": {},
+   "pools": [],
+   "excluded": "币安 BSC 或 Solana 充提未同时开启"
+  },
+  {
+   "coin": "HOLO",
+   "symbol": "HOLOUSDT",
+   "networks": [
+    {
+     "coin": "HOLO",
+     "network": "BSC",
+     "contract": "0x1a5d7e4c3a7f940b240b7357a4bfed30d17f9497",
+     "withdrawFee": "0.38",
+     "withdrawMin": "0.76",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": true,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    },
+    {
+     "coin": "HOLO",
+     "network": "SOL",
+     "contract": "69RX85eQoEsnZvXGmLNjYcWgVkp9r2JjahVm99KbJETU",
+     "withdrawFee": "9.16",
+     "withdrawMin": "18",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": true,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    }
+   ],
+   "assets": {
+    "bsc": {
+     "id": "bsc:HOLO@0x1a5d7e4c3a7f940b240b7357a4bfed30d17f9497",
+     "chain": "bsc",
+     "address": "0x1a5d7e4c3a7f940b240b7357a4bfed30d17f9497",
+     "symbol": "HOLO",
+     "decimals": 18,
+     "kind": "wrapped",
+     "provenance": "币安 BSC 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+    },
+    "solana": {
+     "id": "solana:HOLO@69RX85eQoEsnZvXGmLNjYcWgVkp9r2JjahVm99KbJETU",
+     "chain": "solana",
+     "address": "69RX85eQoEsnZvXGmLNjYcWgVkp9r2JjahVm99KbJETU",
+     "symbol": "HOLO",
+     "decimals": 9,
+     "kind": "wrapped",
+     "provenance": "币安 SOL 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+    }
+   },
+   "pools": [
+    {
+     "id": "0xF7f9fC41DA4B8E0d52a642Af2ad38509C3e40BF0",
+     "chain": "bsc",
+     "market": "HOLO/WBNB",
+     "dex": "PancakeSwap V3",
+     "base": {
+      "id": "bsc:HOLO@0x1a5d7e4c3a7f940b240b7357a4bfed30d17f9497",
+      "chain": "bsc",
+      "address": "0x1a5d7e4c3a7f940b240b7357a4bfed30d17f9497",
+      "symbol": "HOLO",
+      "decimals": 18,
+      "kind": "wrapped",
+      "provenance": "币安 BSC 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+     },
+     "quote": {
+      "id": "bsc:WBNB",
+      "chain": "bsc",
+      "address": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+      "symbol": "WBNB",
+      "decimals": 18,
+      "kind": "native",
+      "provenance": "BNB 原生币的链内封装"
+     },
+     "fee": 0.0025,
+     "program": "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865",
+     "initialPrice": 0.05885,
+     "enabled": true
+    },
+    {
+     "id": "0x3af2191f217683Dca113D4b6e1Dd0eBC3b7dCCfD",
+     "chain": "bsc",
+     "market": "HOLO/WBNB",
+     "dex": "PancakeSwap V3",
+     "base": {
+      "id": "bsc:HOLO@0x1a5d7e4c3a7f940b240b7357a4bfed30d17f9497",
+      "chain": "bsc",
+      "address": "0x1a5d7e4c3a7f940b240b7357a4bfed30d17f9497",
+      "symbol": "HOLO",
+      "decimals": 18,
+      "kind": "wrapped",
+      "provenance": "币安 BSC 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+     },
+     "quote": {
+      "id": "bsc:WBNB",
+      "chain": "bsc",
+      "address": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+      "symbol": "WBNB",
+      "decimals": 18,
+      "kind": "native",
+      "provenance": "BNB 原生币的链内封装"
+     },
+     "fee": 0.0005,
+     "program": "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865",
+     "initialPrice": 0.05885,
+     "enabled": true
+    }
+   ]
+  },
+  {
+   "coin": "HOME",
+   "symbol": "HOMEUSDT",
+   "networks": [
+    {
+     "coin": "HOME",
+     "network": "BSC",
+     "contract": "0x4bfaa776991e85e5f8b1255461cbbd216cfc714f",
+     "withdrawFee": "4.48",
+     "withdrawMin": "8.96",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": true,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    },
+    {
+     "coin": "HOME",
+     "network": "SOL",
+     "contract": "J3umBWqhSjd13sag1E1aUojViWvPYA5dFNyqpKuX3WXj",
+     "withdrawFee": "107",
+     "withdrawMin": "214",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": true,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    }
+   ],
+   "assets": {
+    "bsc": {
+     "id": "bsc:HOME@0x4bfaa776991e85e5f8b1255461cbbd216cfc714f",
+     "chain": "bsc",
+     "address": "0x4bfaa776991e85e5f8b1255461cbbd216cfc714f",
+     "symbol": "HOME",
+     "decimals": 18,
+     "kind": "wrapped",
+     "provenance": "币安 BSC 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+    },
+    "solana": {
+     "id": "solana:HOME@J3umBWqhSjd13sag1E1aUojViWvPYA5dFNyqpKuX3WXj",
+     "chain": "solana",
+     "address": "J3umBWqhSjd13sag1E1aUojViWvPYA5dFNyqpKuX3WXj",
+     "symbol": "HOME",
+     "decimals": 9,
+     "kind": "wrapped",
+     "provenance": "币安 SOL 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+    }
+   },
+   "pools": [],
+   "excluded": "两条链都没有可报价的 PancakeSwap V3 / Raydium CLMM 池"
+  },
+  {
+   "coin": "HUMA",
+   "symbol": "HUMAUSDT",
+   "networks": [
+    {
+     "coin": "HUMA",
+     "network": "BSC",
+     "contract": "0x92516e0ddf1ddbf7fab1b79cac26689fdc5ba8e6",
+     "withdrawFee": "0.78",
+     "withdrawMin": "1.56",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": true,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    },
+    {
+     "coin": "HUMA",
+     "network": "SOL",
+     "contract": "HUMA1821qVDKta3u2ovmfDQeW2fSQouSKE8fkF44wvGw",
+     "withdrawFee": "18",
+     "withdrawMin": "36",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": true,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    }
+   ],
+   "assets": {
+    "bsc": {
+     "id": "bsc:HUMA@0x92516e0ddf1ddbf7fab1b79cac26689fdc5ba8e6",
+     "chain": "bsc",
+     "address": "0x92516e0ddf1ddbf7fab1b79cac26689fdc5ba8e6",
+     "symbol": "HUMA",
+     "decimals": 6,
+     "kind": "wrapped",
+     "provenance": "币安 BSC 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+    },
+    "solana": {
+     "id": "solana:HUMA@HUMA1821qVDKta3u2ovmfDQeW2fSQouSKE8fkF44wvGw",
+     "chain": "solana",
+     "address": "HUMA1821qVDKta3u2ovmfDQeW2fSQouSKE8fkF44wvGw",
+     "symbol": "HUMA",
+     "decimals": 6,
+     "kind": "wrapped",
+     "provenance": "币安 SOL 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+    }
+   },
+   "pools": [
+    {
+     "id": "0x7874F0ECD450A5F06AcB85543fe1d0d48e1C525f",
+     "chain": "bsc",
+     "market": "HUMA/USDT",
+     "dex": "PancakeSwap V3",
+     "base": {
+      "id": "bsc:HUMA@0x92516e0ddf1ddbf7fab1b79cac26689fdc5ba8e6",
+      "chain": "bsc",
+      "address": "0x92516e0ddf1ddbf7fab1b79cac26689fdc5ba8e6",
+      "symbol": "HUMA",
+      "decimals": 6,
+      "kind": "wrapped",
+      "provenance": "币安 BSC 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+     },
+     "quote": {
+      "id": "bsc:USDT-peg",
+      "chain": "bsc",
+      "address": "0x55d398326f99059ff775485246999027b3197955",
+      "symbol": "USDT",
+      "decimals": 18,
+      "kind": "wrapped",
+      "provenance": "BSC 封装表示；跨链兑付路径未验证"
+     },
+     "fee": 0.0001,
+     "program": "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865",
+     "initialPrice": 0.029975,
+     "enabled": true
+    }
+   ]
+  },
+  {
+   "coin": "SOL",
+   "symbol": "SOLUSDT",
+   "networks": [
+    {
+     "coin": "SOL",
+     "network": "BSC",
+     "contract": "0x570a5d26f7765ecb712c0924e4de545b89fd43df",
+     "withdrawFee": "0.00021",
+     "withdrawMin": "0.00042",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": true,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    },
+    {
+     "coin": "SOL",
+     "network": "SOL",
+     "contract": null,
+     "withdrawFee": "0.001",
+     "withdrawMin": "0.01",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": true,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    }
+   ],
+   "assets": {
+    "bsc": {
+     "id": "bsc:SOL@0x570a5d26f7765ecb712c0924e4de545b89fd43df",
+     "chain": "bsc",
+     "address": "0x570a5d26f7765ecb712c0924e4de545b89fd43df",
+     "symbol": "SOL",
+     "decimals": 18,
+     "kind": "wrapped",
+     "provenance": "币安 BSC 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+    },
+    "solana": {
+     "id": "solana:SOL@So11111111111111111111111111111111111111112",
+     "chain": "solana",
+     "address": "So11111111111111111111111111111111111111112",
+     "symbol": "SOL",
+     "decimals": 9,
+     "kind": "wrapped",
+     "provenance": "币安 SOL 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+    }
+   },
+   "pools": [
+    {
+     "id": "0xbFFEc96e8f3b5058B1817c14E4380758Fada01EF",
+     "chain": "bsc",
+     "market": "SOL/WBNB",
+     "dex": "PancakeSwap V3",
+     "base": {
+      "id": "bsc:SOL@0x570a5d26f7765ecb712c0924e4de545b89fd43df",
+      "chain": "bsc",
+      "address": "0x570a5d26f7765ecb712c0924e4de545b89fd43df",
+      "symbol": "SOL",
+      "decimals": 18,
+      "kind": "wrapped",
+      "provenance": "币安 BSC 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+     },
+     "quote": {
+      "id": "bsc:WBNB",
+      "chain": "bsc",
+      "address": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+      "symbol": "WBNB",
+      "decimals": 18,
+      "kind": "native",
+      "provenance": "BNB 原生币的链内封装"
+     },
+     "fee": 0.0005,
+     "program": "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865",
+     "initialPrice": 106.805,
+     "enabled": true
+    },
+    {
+     "id": "0x9F5a0AD81Fe7fD5dFb84EE7A0CFb83967359BD90",
+     "chain": "bsc",
+     "market": "SOL/USDT",
+     "dex": "PancakeSwap V3",
+     "base": {
+      "id": "bsc:SOL@0x570a5d26f7765ecb712c0924e4de545b89fd43df",
+      "chain": "bsc",
+      "address": "0x570a5d26f7765ecb712c0924e4de545b89fd43df",
+      "symbol": "SOL",
+      "decimals": 18,
+      "kind": "wrapped",
+      "provenance": "币安 BSC 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+     },
+     "quote": {
+      "id": "bsc:USDT-peg",
+      "chain": "bsc",
+      "address": "0x55d398326f99059ff775485246999027b3197955",
+      "symbol": "USDT",
+      "decimals": 18,
+      "kind": "wrapped",
+      "provenance": "BSC 封装表示；跨链兑付路径未验证"
+     },
+     "fee": 0.0025,
+     "program": "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865",
+     "initialPrice": 106.805,
+     "enabled": true
+    },
+    {
+     "id": "3nMFwZXwY1s1M5s8vYAHqd4wGs4iSxXE4LRoUMMYqEgF",
+     "chain": "solana",
+     "market": "SOL/USDT",
+     "dex": "Raydium CLMM",
+     "base": {
+      "id": "solana:SOL@So11111111111111111111111111111111111111112",
+      "chain": "solana",
+      "address": "So11111111111111111111111111111111111111112",
+      "symbol": "SOL",
+      "decimals": 9,
+      "kind": "wrapped",
+      "provenance": "币安 SOL 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+     },
+     "quote": {
+      "id": "solana:USDT",
+      "chain": "solana",
+      "address": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+      "symbol": "USDT",
+      "decimals": 6,
+      "kind": "issuer",
+      "provenance": "Solana USDT；与 BSC 封装关系分别登记"
+     },
+     "fee": 0.0001,
+     "program": "CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK",
+     "initialPrice": 106.805,
+     "enabled": true
+    },
+    {
+     "id": "3ucNos4NbumPLZNWztqGHNFFgkHeRMBQAVemeeomsUxv",
+     "chain": "solana",
+     "market": "SOL/USDC",
+     "dex": "Raydium CLMM",
+     "base": {
+      "id": "solana:SOL@So11111111111111111111111111111111111111112",
+      "chain": "solana",
+      "address": "So11111111111111111111111111111111111111112",
+      "symbol": "SOL",
+      "decimals": 9,
+      "kind": "wrapped",
+      "provenance": "币安 SOL 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+     },
+     "quote": {
+      "id": "solana:USDC",
+      "chain": "solana",
+      "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "symbol": "USDC",
+      "decimals": 6,
+      "kind": "issuer",
+      "provenance": "Circle 原生 USDC"
+     },
+     "fee": 0.0004,
+     "program": "CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK",
+     "initialPrice": 106.805,
+     "enabled": true
+    }
+   ]
+  },
+  {
+   "coin": "SOON",
+   "symbol": "SOONUSDT",
+   "networks": [
+    {
+     "coin": "SOON",
+     "network": "BSC",
+     "contract": "0xb9e1fd5a02d3a33b25a14d661414e6ed6954a721",
+     "withdrawFee": "1",
+     "withdrawMin": "4",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": true,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    },
+    {
+     "coin": "SOON",
+     "network": "SOL",
+     "contract": "4eDf52YYzL6i6gbZ6FXqrLUPXbtP61f1gPSFM66M4XHe",
+     "withdrawFee": "2",
+     "withdrawMin": "5",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": true,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    }
+   ],
+   "assets": {},
+   "pools": [],
+   "excluded": "币安没有正在交易的 SOONUSDT"
+  },
+  {
+   "coin": "USD1",
+   "symbol": "USD1USDT",
+   "networks": [
+    {
+     "coin": "USD1",
+     "network": "BSC",
+     "contract": "0x8d0d000ee44948fc98c9b98a4fa4921476f08b0d",
+     "withdrawFee": "0",
+     "withdrawMin": "5",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": true,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    },
+    {
+     "coin": "USD1",
+     "network": "SOL",
+     "contract": "USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB",
+     "withdrawFee": "0.3",
+     "withdrawMin": "5",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": true,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    }
+   ],
+   "assets": {
+    "bsc": {
+     "id": "bsc:USD1@0x8d0d000ee44948fc98c9b98a4fa4921476f08b0d",
+     "chain": "bsc",
+     "address": "0x8d0d000ee44948fc98c9b98a4fa4921476f08b0d",
+     "symbol": "USD1",
+     "decimals": 18,
+     "kind": "wrapped",
+     "provenance": "币安 BSC 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+    },
+    "solana": {
+     "id": "solana:USD1@USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB",
+     "chain": "solana",
+     "address": "USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB",
+     "symbol": "USD1",
+     "decimals": 6,
+     "kind": "wrapped",
+     "provenance": "币安 SOL 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+    }
+   },
+   "pools": [
+    {
+     "id": "0x9c4Ee895e4f6Ce07Ada631C508D1306Db7502cCE",
+     "chain": "bsc",
+     "market": "USD1/USDT",
+     "dex": "PancakeSwap V3",
+     "base": {
+      "id": "bsc:USD1@0x8d0d000ee44948fc98c9b98a4fa4921476f08b0d",
+      "chain": "bsc",
+      "address": "0x8d0d000ee44948fc98c9b98a4fa4921476f08b0d",
+      "symbol": "USD1",
+      "decimals": 18,
+      "kind": "wrapped",
+      "provenance": "币安 BSC 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+     },
+     "quote": {
+      "id": "bsc:USDT-peg",
+      "chain": "bsc",
+      "address": "0x55d398326f99059ff775485246999027b3197955",
+      "symbol": "USDT",
+      "decimals": 18,
+      "kind": "wrapped",
+      "provenance": "BSC 封装表示；跨链兑付路径未验证"
+     },
+     "fee": 0.0001,
+     "program": "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865",
+     "initialPrice": 0.999775,
+     "enabled": true
+    },
+    {
+     "id": "0xB3F27Fe82Bd1e5D7458E02b543CF0C6610fFAD83",
+     "chain": "bsc",
+     "market": "USD1/USDC",
+     "dex": "PancakeSwap V3",
+     "base": {
+      "id": "bsc:USD1@0x8d0d000ee44948fc98c9b98a4fa4921476f08b0d",
+      "chain": "bsc",
+      "address": "0x8d0d000ee44948fc98c9b98a4fa4921476f08b0d",
+      "symbol": "USD1",
+      "decimals": 18,
+      "kind": "wrapped",
+      "provenance": "币安 BSC 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+     },
+     "quote": {
+      "id": "bsc:USDC-peg",
+      "chain": "bsc",
+      "address": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
+      "symbol": "USDC",
+      "decimals": 18,
+      "kind": "wrapped",
+      "provenance": "Binance-Peg；不等同 Circle 原生 USDC；跨链兑付路径未验证"
+     },
+     "fee": 0.0001,
+     "program": "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865",
+     "initialPrice": 0.999775,
+     "enabled": true
+    },
+    {
+     "id": "BCDdHonby65iduz3Ev3c9v5XjNkzyu5e56KRFHpBM4T9",
+     "chain": "solana",
+     "market": "USD1/USDC",
+     "dex": "Raydium CLMM",
+     "base": {
+      "id": "solana:USD1@USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB",
+      "chain": "solana",
+      "address": "USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB",
+      "symbol": "USD1",
+      "decimals": 6,
+      "kind": "wrapped",
+      "provenance": "币安 SOL 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+     },
+     "quote": {
+      "id": "solana:USDC",
+      "chain": "solana",
+      "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "symbol": "USDC",
+      "decimals": 6,
+      "kind": "issuer",
+      "provenance": "Circle 原生 USDC"
+     },
+     "fee": 0.0001,
+     "program": "CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK",
+     "initialPrice": 0.999775,
+     "enabled": true
+    },
+    {
+     "id": "B4k3cQ56rcx5ZuxZh2wNpaDjW9Wbo2oUiReSgKatvJpS",
+     "chain": "solana",
+     "market": "USD1/USDT",
+     "dex": "Raydium CLMM",
+     "base": {
+      "id": "solana:USD1@USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB",
+      "chain": "solana",
+      "address": "USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB",
+      "symbol": "USD1",
+      "decimals": 6,
+      "kind": "wrapped",
+      "provenance": "币安 SOL 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+     },
+     "quote": {
+      "id": "solana:USDT",
+      "chain": "solana",
+      "address": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+      "symbol": "USDT",
+      "decimals": 6,
+      "kind": "issuer",
+      "provenance": "Solana USDT；与 BSC 封装关系分别登记"
+     },
+     "fee": 0.0001,
+     "program": "CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK",
+     "initialPrice": 0.999775,
+     "enabled": true
+    }
+   ]
+  },
+  {
+   "coin": "USDC",
+   "symbol": "USDCUSDT",
+   "networks": [
+    {
+     "coin": "USDC",
+     "network": "BSC",
+     "contract": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
+     "withdrawFee": "0",
+     "withdrawMin": "3",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": true,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    },
+    {
+     "coin": "USDC",
+     "network": "SOL",
+     "contract": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+     "withdrawFee": "0.3",
+     "withdrawMin": "3",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": true,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    }
+   ],
+   "assets": {
+    "bsc": {
+     "id": "bsc:USDC@0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
+     "chain": "bsc",
+     "address": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
+     "symbol": "USDC",
+     "decimals": 18,
+     "kind": "wrapped",
+     "provenance": "币安 BSC 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+    },
+    "solana": {
+     "id": "solana:USDC@EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+     "chain": "solana",
+     "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+     "symbol": "USDC",
+     "decimals": 6,
+     "kind": "wrapped",
+     "provenance": "币安 SOL 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+    }
+   },
+   "pools": [
+    {
+     "id": "0x92b7807bF19b7DDdf89b706143896d05228f3121",
+     "chain": "bsc",
+     "market": "USDC/USDT",
+     "dex": "PancakeSwap V3",
+     "base": {
+      "id": "bsc:USDC@0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
+      "chain": "bsc",
+      "address": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
+      "symbol": "USDC",
+      "decimals": 18,
+      "kind": "wrapped",
+      "provenance": "币安 BSC 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+     },
+     "quote": {
+      "id": "bsc:USDT-peg",
+      "chain": "bsc",
+      "address": "0x55d398326f99059ff775485246999027b3197955",
+      "symbol": "USDT",
+      "decimals": 18,
+      "kind": "wrapped",
+      "provenance": "BSC 封装表示；跨链兑付路径未验证"
+     },
+     "fee": 0.0001,
+     "program": "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865",
+     "initialPrice": 1.001015,
+     "enabled": true
+    },
+    {
+     "id": "0xf2688Fb5B81049DFB7703aDa5e770543770612C4",
+     "chain": "bsc",
+     "market": "USDC/WBNB",
+     "dex": "PancakeSwap V3",
+     "base": {
+      "id": "bsc:USDC@0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
+      "chain": "bsc",
+      "address": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
+      "symbol": "USDC",
+      "decimals": 18,
+      "kind": "wrapped",
+      "provenance": "币安 BSC 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+     },
+     "quote": {
+      "id": "bsc:WBNB",
+      "chain": "bsc",
+      "address": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+      "symbol": "WBNB",
+      "decimals": 18,
+      "kind": "native",
+      "provenance": "BNB 原生币的链内封装"
+     },
+     "fee": 0.0001,
+     "program": "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865",
+     "initialPrice": 1.001015,
+     "enabled": true
+    },
+    {
+     "id": "BZtgQEyS6eXUXicYPHecYQ7PybqodXQMvkjUbP4R8mUU",
+     "chain": "solana",
+     "market": "USDC/USDT",
+     "dex": "Raydium CLMM",
+     "base": {
+      "id": "solana:USDC@EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "chain": "solana",
+      "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "symbol": "USDC",
+      "decimals": 6,
+      "kind": "wrapped",
+      "provenance": "币安 SOL 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+     },
+     "quote": {
+      "id": "solana:USDT",
+      "chain": "solana",
+      "address": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+      "symbol": "USDT",
+      "decimals": 6,
+      "kind": "issuer",
+      "provenance": "Solana USDT；与 BSC 封装关系分别登记"
+     },
+     "fee": 0.0001,
+     "program": "CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK",
+     "initialPrice": 1.001015,
+     "enabled": true
+    },
+    {
+     "id": "3NeUgARDmFgnKtkJLqUcEUNCfknFCcGsFfMJCtx6bAgx",
+     "chain": "solana",
+     "market": "USDC/USDT",
+     "dex": "Raydium CLMM",
+     "base": {
+      "id": "solana:USDC@EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "chain": "solana",
+      "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "symbol": "USDC",
+      "decimals": 6,
+      "kind": "wrapped",
+      "provenance": "币安 SOL 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+     },
+     "quote": {
+      "id": "solana:USDT",
+      "chain": "solana",
+      "address": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+      "symbol": "USDT",
+      "decimals": 6,
+      "kind": "issuer",
+      "provenance": "Solana USDT；与 BSC 封装关系分别登记"
+     },
+     "fee": 0.0001,
+     "program": "CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK",
+     "initialPrice": 1.001015,
+     "enabled": true
+    }
+   ]
+  },
+  {
+   "coin": "USDT",
+   "symbol": "USDTUSDT",
+   "networks": [
+    {
+     "coin": "USDT",
+     "network": "BSC",
+     "contract": "0x55d398326f99059ff775485246999027b3197955",
+     "withdrawFee": "0.01",
+     "withdrawMin": "5",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": true,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    },
+    {
+     "coin": "USDT",
+     "network": "SOL",
+     "contract": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+     "withdrawFee": "0.3",
+     "withdrawMin": "5",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": true,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    }
+   ],
+   "assets": {},
+   "pools": [],
+   "excluded": "计价币本身，不作为基础资产"
+  },
+  {
+   "coin": "WLFI",
+   "symbol": "WLFIUSDT",
+   "networks": [
+    {
+     "coin": "WLFI",
+     "network": "BSC",
+     "contract": "0x47474747477b199288bf72a1d702f7fe0fb1deea",
+     "withdrawFee": "0.4",
+     "withdrawMin": "0.8",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": true,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    },
+    {
+     "coin": "WLFI",
+     "network": "SOL",
+     "contract": "WLFinEv6ypjkczcS83FZqFpgFZYwQXutRbxGe7oC16g",
+     "withdrawFee": "9.59",
+     "withdrawMin": "19",
+     "minConfirm": 1,
+     "depositEnable": true,
+     "withdrawEnable": true,
+     "busy": false,
+     "estimatedArrivalTime": 1
+    }
+   ],
+   "assets": {
+    "bsc": {
+     "id": "bsc:WLFI@0x47474747477b199288bf72a1d702f7fe0fb1deea",
+     "chain": "bsc",
+     "address": "0x47474747477b199288bf72a1d702f7fe0fb1deea",
+     "symbol": "WLFI",
+     "decimals": 18,
+     "kind": "wrapped",
+     "provenance": "币安 BSC 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+    },
+    "solana": {
+     "id": "solana:WLFI@WLFinEv6ypjkczcS83FZqFpgFZYwQXutRbxGe7oC16g",
+     "chain": "solana",
+     "address": "WLFinEv6ypjkczcS83FZqFpgFZYwQXutRbxGe7oC16g",
+     "symbol": "WLFI",
+     "decimals": 6,
+     "kind": "wrapped",
+     "provenance": "币安 SOL 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+    }
+   },
+   "pools": [
+    {
+     "id": "0xC29Df01EfCa2B42Aa22bD9BdEa6422176a1E55Fc",
+     "chain": "bsc",
+     "market": "WLFI/USDT",
+     "dex": "PancakeSwap V3",
+     "base": {
+      "id": "bsc:WLFI@0x47474747477b199288bf72a1d702f7fe0fb1deea",
+      "chain": "bsc",
+      "address": "0x47474747477b199288bf72a1d702f7fe0fb1deea",
+      "symbol": "WLFI",
+      "decimals": 18,
+      "kind": "wrapped",
+      "provenance": "币安 BSC 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+     },
+     "quote": {
+      "id": "bsc:USDT-peg",
+      "chain": "bsc",
+      "address": "0x55d398326f99059ff775485246999027b3197955",
+      "symbol": "USDT",
+      "decimals": 18,
+      "kind": "wrapped",
+      "provenance": "BSC 封装表示；跨链兑付路径未验证"
+     },
+     "fee": 0.0025,
+     "program": "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865",
+     "initialPrice": 0.05485,
+     "enabled": true
+    },
+    {
+     "id": "0x097419329833bdBF0a1FF5ba134f76d4E5929434",
+     "chain": "bsc",
+     "market": "WLFI/WBNB",
+     "dex": "PancakeSwap V3",
+     "base": {
+      "id": "bsc:WLFI@0x47474747477b199288bf72a1d702f7fe0fb1deea",
+      "chain": "bsc",
+      "address": "0x47474747477b199288bf72a1d702f7fe0fb1deea",
+      "symbol": "WLFI",
+      "decimals": 18,
+      "kind": "wrapped",
+      "provenance": "币安 BSC 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+     },
+     "quote": {
+      "id": "bsc:WBNB",
+      "chain": "bsc",
+      "address": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+      "symbol": "WBNB",
+      "decimals": 18,
+      "kind": "native",
+      "provenance": "BNB 原生币的链内封装"
+     },
+     "fee": 0.0025,
+     "program": "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865",
+     "initialPrice": 0.05485,
+     "enabled": true
+    },
+    {
+     "id": "7RQBLnUifXoE6dGaRszU6HMnWbEBW1qFro5DdNd47VxH",
+     "chain": "solana",
+     "market": "WLFI/SOL",
+     "dex": "Raydium CLMM",
+     "base": {
+      "id": "solana:WLFI@WLFinEv6ypjkczcS83FZqFpgFZYwQXutRbxGe7oC16g",
+      "chain": "solana",
+      "address": "WLFinEv6ypjkczcS83FZqFpgFZYwQXutRbxGe7oC16g",
+      "symbol": "WLFI",
+      "decimals": 6,
+      "kind": "wrapped",
+      "provenance": "币安 SOL 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+     },
+     "quote": {
+      "id": "solana:SOL",
+      "chain": "solana",
+      "address": "So11111111111111111111111111111111111111112",
+      "symbol": "SOL",
+      "decimals": 9,
+      "kind": "native",
+      "provenance": "SOL 原生币的链内封装"
+     },
+     "fee": 0.006,
+     "program": "CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK",
+     "initialPrice": 0.05485,
+     "enabled": true
+    },
+    {
+     "id": "zHGN3Kh1miQSuehUWD1TPYTxkCkUrtT8foNxtASsiKJ",
+     "chain": "solana",
+     "market": "WLFI/USDC",
+     "dex": "Raydium CLMM",
+     "base": {
+      "id": "solana:WLFI@WLFinEv6ypjkczcS83FZqFpgFZYwQXutRbxGe7oC16g",
+      "chain": "solana",
+      "address": "WLFinEv6ypjkczcS83FZqFpgFZYwQXutRbxGe7oC16g",
+      "symbol": "WLFI",
+      "decimals": 6,
+      "kind": "wrapped",
+      "provenance": "币安 SOL 网络登记合约；经币安余额兑付（DDA-012），含交易所对手方与充提暂停风险"
+     },
+     "quote": {
+      "id": "solana:USDC",
+      "chain": "solana",
+      "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "symbol": "USDC",
+      "decimals": 6,
+      "kind": "issuer",
+      "provenance": "Circle 原生 USDC"
+     },
+     "fee": 0.002,
+     "program": "CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK",
+     "initialPrice": 0.05485,
+     "enabled": true
+    }
+   ]
+  }
+ ]
+}
